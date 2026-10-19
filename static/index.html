@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="uz" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Davra</title>
+<meta name="theme-color" content="#17212b">
+<meta name="description" content="Davra — xavfsiz va qulay messenjer">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><linearGradient id="vbGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3cc0ff"/><stop offset="1" stop-color="#7b5cff"/></linearGradient></defs></svg>
+
+<!-- ============ Kirish / ro'yxatdan o'tish ============ -->
+<div id="auth" hidden>
+  <div class="card">
+    <div class="logo"><img src="/icon-192.png" alt="" width="72" height="72"></div>
+    <h1>Davra</h1>
+    <p class="sub">Yaqinlaringiz bilan bog‘laning</p>
+    <div class="tabs">
+      <button id="tabLogin" class="on" type="button">Kirish</button>
+      <button id="tabReg" type="button">Ro'yxatdan o'tish</button>
+    </div>
+    <form id="authForm" autocomplete="on">
+      <input id="aName" placeholder="Ismingiz" autocomplete="name" hidden>
+      <input id="aUser" placeholder="Username (masalan: arteker)" autocomplete="username" autocapitalize="none" required>
+      <input id="aPass" type="password" placeholder="Parol (kamida 8 belgi)" autocomplete="current-password" required>
+      <div class="err" id="aErr"></div>
+      <button class="btn primary" id="aBtn" type="submit">Kirish</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ Asosiy ilova ============ -->
+<div id="app" hidden>
+  <aside id="side">
+    <header class="side-top">
+      <button class="icon-btn" id="menuToggle" type="button" aria-label="Menyuni ochish" aria-haspopup="dialog"><span class="burger" aria-hidden="true"><i></i><i></i><i></i></span></button>
+      <div class="side-title">Davra<span class="conn" id="conn"></span></div>
+    </header>
+    <div class="search"><input id="search" type="search" placeholder="Odam qidirish (@username)" autocomplete="off" autocapitalize="none"></div>
+    <div id="searchResults" class="results" hidden></div>
+    <div class="side-actions"><button id="newGroup" type="button">+ Guruh</button><button id="newChannel" type="button">+ Kanal</button><button id="browseChannels" type="button">Kanallar</button></div>
+    <div class="chat-filters" id="chatFilters" aria-label="Suhbat papkalari"></div>
+    <div id="channelResults" class="results" hidden></div>
+    <div class="search"><input id="messageSearch" type="search" placeholder="Xabardan qidirish" autocomplete="off"></div>
+    <div id="messageResults" class="results" hidden></div>
+    <div id="chatList"></div>
+  </aside>
+
+  <section id="main">
+    <div id="empty">
+      <div class="welcome-mark" aria-hidden="true"><img src="/icon-192.png" alt="" width="84" height="84"></div>
+      <h2>Yaqinlaringiz bilan bog‘laning</h2>
+      <p class="welcome-copy">Shaxsiy suhbatni boshlang yoki jamoangiz uchun guruh va kanal yarating. Xabarlaringiz shu yerda, tartibli va real vaqtda.</p>
+      <div class="welcome-grid">
+        <div class="welcome-card"><div class="welcome-icon" aria-hidden="true">🔎</div><div><b>Odamlarni toping</b><span>Username orqali do‘stlaringizni qidiring.</span></div></div>
+        <div class="welcome-card"><div class="welcome-icon" aria-hidden="true">👥</div><div><b>Guruh yarating</b><span>Jamoa bilan bir joyda suhbatlashing.</span></div></div>
+        <div class="welcome-card"><div class="welcome-icon" aria-hidden="true">📣</div><div><b>Kanal oching</b><span>Yangilik va postlarni obunachilarga ulashing.</span></div></div>
+      </div>
+    </div>
+
+    <div id="chatView" hidden>
+      <header class="chead">
+        <button class="icon-btn" id="back" type="button" aria-label="Orqaga">←</button>
+        <button class="chat-identity" id="chatIdentity" type="button" aria-label="Suhbat ma'lumotlari">
+          <div id="headAvatar"></div>
+          <div class="head-text"><div class="nm" id="headName"></div><div class="st" id="headSt"></div></div>
+        </button>
+        <div class="head-actions">
+          <button class="btn small" id="inviteMember" type="button" hidden>+ A'zo</button>
+          <button class="icon-btn" id="chatCallBtn" type="button" title="Qo'ng'iroqlar — tez kunda" disabled>📞</button>
+          <button class="icon-btn" id="chatMoreBtn" type="button" title="Boshqa" aria-haspopup="menu">⋮</button>
+        </div>
+      </header>
+      <div id="pinBar" hidden>
+        <button class="pin-main" id="pinJump" type="button"><span class="pin-icon" aria-hidden="true">📌</span><span class="pin-copy"><b>Qadalgan xabar</b><span id="pinText"></span></span></button>
+        <button class="icon-btn" id="pinClose" type="button" title="Qadashni olib tashlash" hidden>✕</button>
+      </div>
+      <div id="banner" hidden></div>
+      <div id="msgsWrap">
+        <div id="msgs"></div>
+        <button id="toBottom" type="button" aria-label="Eng so'nggi xabarga" hidden>↓<span id="toBottomBadge" class="badge" hidden></span></button>
+        <div id="dropHint" hidden>Faylni shu yerga tashlang</div>
+      </div>
+      <div id="composerWrap">
+        <div class="bar" id="replyBar" hidden>
+          <span class="bar-icon" aria-hidden="true">↩</span>
+          <div class="bar-copy"><b id="replyName"></b><span id="replyText"></span></div>
+          <button class="icon-btn" id="replyCancel" type="button" aria-label="Bekor qilish">✕</button>
+        </div>
+        <div class="bar" id="attachBar" hidden>
+          <span class="bar-thumb" id="attachThumb" aria-hidden="true"></span>
+          <div class="bar-copy"><b id="attachName"></b><span id="attachInfo"></span><i class="progress" id="attachProgress"><u></u></i></div>
+          <button class="icon-btn" id="attachCancel" type="button" aria-label="Olib tashlash">✕</button>
+        </div>
+        <form id="composer">
+          <div class="attach-wrap">
+            <button class="icon-btn" id="attachBtn" type="button" title="Biriktirish" aria-haspopup="menu">📎</button>
+            <div class="popup" id="attachMenu" role="menu" hidden>
+              <button type="button" id="pickImage" role="menuitem">🖼 Rasm</button>
+              <button type="button" id="pickFile" role="menuitem">📄 Fayl</button>
+            </div>
+          </div>
+          <textarea id="input" rows="1" placeholder="Xabar yozing…" maxlength="4000"></textarea>
+          <button class="icon-btn" id="emojiBtn" type="button" title="Emoji" aria-haspopup="true">😊</button>
+          <button class="round" id="micBtn" type="button" aria-label="Ovozli xabar" title="Ovozli xabar">🎤</button>
+          <button class="round" id="send" type="submit" aria-label="Yuborish" hidden>➤</button>
+        </form>
+        <div class="bar rec" id="recBar" hidden>
+          <span class="rec-dot" aria-hidden="true"></span><b id="recTime">0:00</b><span class="rec-hint">Yozilmoqda…</span>
+          <button class="icon-btn" id="recCancel" type="button" aria-label="Bekor qilish" title="Bekor qilish">🗑</button>
+          <button class="round" id="recSend" type="button" aria-label="Yuborish">➤</button>
+        </div>
+        <div id="emojiPanel" hidden></div>
+        <input id="imagePick" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+        <input id="filePick" type="file" hidden>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="ctxMenu" class="popup ctx" role="menu" hidden></div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+
+<!-- ============ Yon menyu (uch chiziq) ============ -->
+<dialog class="drawer" id="appMenu" aria-label="Asosiy menyu">
+  <nav class="drawer-panel" aria-label="Asosiy bo‘limlar">
+    <button class="drawer-profile" id="menuProfile" type="button">
+      <span id="menuAvatar"></span>
+      <span class="drawer-profile-copy"><span class="drawer-name" id="menuDisplayName"></span><span class="drawer-un" id="menuUsername"></span></span>
+    </button>
+    <div class="drawer-group">
+      <button class="drawer-item" id="menuMyProfile" type="button"><span class="di-icon" aria-hidden="true">👤</span><span>Mening profilim</span></button>
+    </div>
+    <div class="drawer-group">
+      <button class="drawer-item" id="menuNewGroup" type="button"><span class="di-icon" aria-hidden="true">👥</span><span>Yangi guruh</span></button>
+      <button class="drawer-item" id="menuNewChannel" type="button"><span class="di-icon" aria-hidden="true">📣</span><span>Yangi kanal</span></button>
+      <button class="drawer-item" id="menuContacts" type="button"><span class="di-icon" aria-hidden="true">📇</span><span>Kontaktlar</span></button>
+      <button class="drawer-item" id="menuSavedMessages" type="button"><span class="di-icon" aria-hidden="true">🔖</span><span>Saqlangan xabarlar</span></button>
+      <button class="drawer-item" id="menuCalls" type="button" disabled><span class="di-icon" aria-hidden="true">📞</span><span>Qo'ng'iroqlar</span><span class="soon">Tez kunda</span></button>
+    </div>
+    <div class="drawer-group">
+      <button class="drawer-item" id="menuSettings" type="button"><span class="di-icon" aria-hidden="true">⚙️</span><span>Sozlamalar</span></button>
+      <div class="drawer-item switch-row" id="menuNightMode" role="group"><span class="di-icon" aria-hidden="true">🌙</span><span>Tungi rejim</span><label class="switch"><input id="menuDarkToggle" type="checkbox" aria-label="Tungi rejim"><span></span></label></div>
+      <button class="drawer-item" id="menuInviteFriends" type="button"><span class="di-icon" aria-hidden="true">🔗</span><span>Do'stlarni taklif qilish</span></button>
+      <button class="drawer-item" id="menuAbout" type="button"><span class="di-icon" aria-hidden="true">ℹ️</span><span>Muloqot haqida</span></button>
+      <button class="drawer-item danger" id="menuLogout" type="button"><span class="di-icon" aria-hidden="true">🚪</span><span>Chiqish</span></button>
+    </div>
+    <div class="drawer-footer">Davra v2.0 · Xavfsiz va qulay suhbat</div>
+  </nav>
+</dialog>
+
+<!-- ============ Sozlamalar (sahifalar JS orqali quriladi) ============ -->
+<dialog class="sheet" id="settingsDialog" aria-labelledby="settingsTitle">
+  <div class="sheet-head">
+    <button class="icon-btn" id="settingsBack" type="button" aria-label="Orqaga" hidden>←</button>
+    <h2 id="settingsTitle">Sozlamalar</h2>
+    <button class="icon-btn" id="closeSettings" type="button" aria-label="Yopish">✕</button>
+  </div>
+  <div class="sheet-body" id="settingsBody"></div>
+</dialog>
+
+<!-- ============ Profil ============ -->
+<dialog class="sheet" id="profileDialog" aria-labelledby="profileHeroName">
+  <div class="sheet-head">
+    <button class="icon-btn" id="closeProfileBtn" type="button" aria-label="Orqaga">←</button>
+    <h2>Profil</h2>
+    <button class="icon-btn" id="editProfileToggle" type="button" title="Tahrirlash">✏️</button>
+  </div>
+  <div class="sheet-body">
+    <div class="hero">
+      <div class="hero-avatar" id="profileAvatarLarge"></div>
+      <h3 class="hero-name" id="profileHeroName"></h3>
+      <div class="hero-status" id="profileHeroStatus">onlayn</div>
+    </div>
+    <div class="info-cards" id="profileViewCards">
+      <div class="info-card"><span class="ic" aria-hidden="true">@</span><div><div class="iv" id="profileViewUsername"></div><div class="il">Username</div></div><button class="icon-btn" id="copyUsername" type="button" title="Nusxa olish">⧉</button></div>
+      <div class="info-card"><span class="ic" aria-hidden="true">ℹ️</span><div><div class="iv" id="profileViewBio"></div><div class="il">Bio</div></div></div>
+      <div class="info-card" id="ownerVerified" hidden><span class="ic" aria-hidden="true"></span><div><div class="iv">Davra tomonidan tasdiqlangan</div><div class="il">Rasmiy egasi akkaunti</div></div></div>
+    </div>
+    <form id="profileForm" class="form" hidden>
+      <div class="row-actions">
+        <button class="btn" id="changeAvatar" type="button">📷 Rasmni almashtirish</button>
+        <button class="btn ghost" id="removeAvatar" type="button">Rasmni olib tashlash</button>
+        <input id="avatarFile" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+      </div>
+      <label class="field"><span>Ism</span><input id="profileName" maxlength="50" required></label>
+      <label class="field"><span>Username</span><input id="profileUsername" readonly><small>Username hozircha o‘zgarmaydi</small></label>
+      <label class="field"><span>Bio</span><textarea id="profileBio" maxlength="160" placeholder="O‘zingiz haqingizda qisqacha yozing"></textarea></label>
+      <button class="btn primary" type="submit" id="profileSave">O‘zgarishlarni saqlash</button>
+    </form>
+  </div>
+</dialog>
+
+<!-- ============ Kontaktlar ============ -->
+<dialog class="sheet" id="contactsDialog" aria-labelledby="contactsTitle">
+  <div class="sheet-head"><h2 id="contactsTitle">Kontaktlar</h2><button class="icon-btn" id="closeContacts" type="button" aria-label="Yopish">✕</button></div>
+  <div class="sheet-search"><input id="contactsSearchInput" type="search" placeholder="Kontaktlarni qidirish…" autocomplete="off"></div>
+  <div class="sheet-body" id="contactsList"></div>
+</dialog>
+
+<!-- ============ Saqlangan xabarlar ============ -->
+<dialog class="sheet" id="savedDialog" aria-labelledby="savedTitle">
+  <div class="sheet-head"><h2 id="savedTitle">🔖 Saqlangan xabarlar</h2><button class="icon-btn" id="closeSaved" type="button" aria-label="Yopish">✕</button></div>
+  <div class="sheet-body" id="savedList"></div>
+  <form class="saved-compose" id="savedForm">
+    <input id="savedInput" placeholder="O'zingiz uchun eslatma yozing…" maxlength="4000" autocomplete="off">
+    <button class="round" type="submit" aria-label="Saqlash">➤</button>
+  </form>
+</dialog>
+
+<!-- ============ Davra haqida ============ -->
+<dialog class="sheet narrow" id="aboutDialog" aria-labelledby="aboutTitle">
+  <div class="about-inner">
+    <img class="about-logo" src="/icon-192.png" alt="" width="76" height="76">
+    <h2 id="aboutTitle">Davra</h2>
+    <div class="about-version">Versiya 2.0</div>
+    <p class="about-desc">Tezkor, xavfsiz va qulay muloqot tizimi: shaxsiy suhbatlar, guruhlar, kanallar, rasm va ovozli xabarlar.</p>
+    <div class="about-features">
+      <div>🔒 <span>Himoyalangan seanslar va maxfiylik sozlamalari</span></div>
+      <div>⚡ <span>Real vaqtli xabar almashish</span></div>
+      <div>🔔 <span>Ilova yopiq bo'lsa ham bildirishnoma (Push)</span></div>
+      <div>📎 <span>Rasm, fayl va ovozli xabarlar</span></div>
+      <div>👥 <span>Guruhlar va kanallar</span></div>
+    </div>
+    <button class="btn primary wide" id="closeAbout" type="button">Tushunarli</button>
+  </div>
+</dialog>
+
+<!-- ============ Guruh / kanal ma'lumotlari ============ -->
+<dialog class="sheet" id="roomDialog" aria-labelledby="roomTitleBar">
+  <div class="sheet-head">
+    <button class="icon-btn" id="roomBack" type="button" aria-label="Orqaga" hidden>←</button>
+    <h2 id="roomTitleBar">Ma’lumot</h2>
+    <button class="icon-btn" id="closeRoomDialog" type="button" aria-label="Yopish">✕</button>
+  </div>
+  <div class="sheet-body" id="roomBody"></div>
+  <input type="file" id="roomAvatarFile" accept="image/jpeg,image/png,image/webp" hidden>
+</dialog>
+
+<dialog class="sheet narrow" id="createRoomDialog" aria-labelledby="createRoomTitle">
+  <div class="sheet-head"><h2 id="createRoomTitle"></h2><button class="icon-btn" id="closeCreateRoom" type="button" aria-label="Yopish">✕</button></div>
+  <div class="sheet-body pad">
+    <p class="muted" id="createRoomDescription"></p>
+    <form class="form" id="createRoomForm">
+      <input id="createRoomKind" type="hidden">
+      <label class="field"><span>Nomi</span><input id="createRoomName" maxlength="80" required placeholder="Masalan, Do‘stlar davrasi"></label>
+      <label class="field" id="createRoomMembersField"><span>A’zolar username’i (ixtiyoriy, vergul bilan)</span><input id="createRoomMembers" maxlength="1000" placeholder="@ali, @vali" autocomplete="off"></label>
+      <button class="btn primary create-submit" type="submit">Yaratish</button>
+    </form>
+  </div>
+</dialog>
+
+<!-- ============ Yo'naltirish ============ -->
+<dialog class="sheet" id="forwardDialog" aria-labelledby="forwardTitle">
+  <div class="sheet-head"><h2 id="forwardTitle">Yo'naltirish</h2><button class="icon-btn" id="closeForward" type="button" aria-label="Yopish">✕</button></div>
+  <div class="sheet-search"><input id="forwardSearch" type="search" placeholder="Suhbat qidirish…" autocomplete="off"></div>
+  <div class="sheet-body" id="forwardList"></div>
+  <div class="sheet-foot"><button class="btn primary wide" id="forwardSend" type="button" disabled>Yuborish</button></div>
+</dialog>
+
+<!-- ============ Kichik oynalar ============ -->
+<dialog class="sheet narrow" id="confirmDialog" aria-labelledby="confirmTitle">
+  <div class="pad"><h2 id="confirmTitle">Tasdiqlash</h2><p class="muted" id="confirmText"></p>
+  <div class="confirm-actions"><button class="btn ghost" id="cancelConfirm" type="button">Bekor qilish</button><button class="btn primary" id="acceptConfirm" type="button">Davom etish</button></div></div>
+</dialog>
+
+<dialog class="sheet narrow" id="editMessageDialog" aria-labelledby="editMessageTitle">
+  <form class="pad" id="editMessageForm"><h2 id="editMessageTitle">Xabarni tahrirlash</h2>
+    <textarea id="editMessageText" maxlength="4000"></textarea>
+    <div class="confirm-actions"><button class="btn ghost" id="cancelEditMessage" type="button">Bekor qilish</button><button class="btn primary" type="submit">Saqlash</button></div>
+  </form>
+</dialog>
+
+<dialog class="sheet narrow" id="contactDialog" aria-labelledby="contactTitle">
+  <div class="hero">
+    <div class="hero-avatar" id="contactAvatar"></div>
+    <h3 class="hero-name" id="contactTitle"></h3>
+    <div class="hero-status" id="contactStatus"></div>
+    <div class="muted" id="contactUsername"></div>
+    <div class="contact-verification" id="contactVerification" hidden>Davra tomonidan tasdiqlangan akkaunt</div>
+  </div>
+  <p class="contact-bio" id="contactBio"></p>
+  <div class="pad contact-actions">
+    <button class="btn primary" id="contactStart" type="button">Suhbatga qaytish</button>
+    <button class="btn ghost" id="contactMute" type="button">Ovozsiz qilish</button>
+    <button class="btn ghost danger-text" id="contactBlock" type="button">Bloklash</button>
+  </div>
+</dialog>
+
+<dialog class="lightbox" id="lightbox" aria-label="Rasm">
+  <img id="lightboxImg" alt="">
+  <div class="lightbox-bar"><a class="btn" id="lightboxDownload" download>⬇ Yuklab olish</a><button class="btn ghost" id="lightboxClose" type="button">Yopish</button></div>
+</dialog>
+
+<script src="/app.js"></script>
+<script src="/panels.js"></script>
+<script>boot();</script>
+</body>
+</html>

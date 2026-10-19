@@ -1,0 +1,13 @@
+# Ma'lumotlar bazasi — ichida parol hashlari va sessiyalar bor, GitHub'ga CHIQARMANG
+*.db
+*.db-journal
+*.sqlite3
+# Eski avatar fayllari (endi avatarlar bazada saqlanadi)
+static/uploads/
+# Maxfiy sozlamalar
+.env
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/

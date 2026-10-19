@@ -32,7 +32,6 @@ if __name__ == "__main__":  # `python main.py` — modul "main" nomi bilan qayta
 from fastapi import FastAPI, Header, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-# BU YERGA text QO'SHILDI
 from sqlalchemy import (Boolean, Column, Float, ForeignKey, Integer, String, Text, text,
                         UniqueConstraint, delete, false, func, or_, select, true, update)
 from sqlalchemy.exc import IntegrityError
@@ -514,9 +513,11 @@ async def new_session(db, user, request=None):
     return token
 
 
-# YANGILANGAN HEALTH ENDPOINT (Bazani uyg'oq tutadi)
+# TUZATILGAN HEALTH ENDPOINT (Vercel /api ni olib tashlasa ham ishlaydi)
 @app.get("/api/health")
 @app.get("/api/health/")
+@app.get("/health")
+@app.get("/health/")
 async def health():
     try:
         async with SessionLocal() as db:

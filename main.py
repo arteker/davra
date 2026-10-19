@@ -518,7 +518,6 @@ async def new_session(db, user, request=None):
 @app.get("/api/health")
 @app.get("/api/health/")
 async def health():
-    # ... bazaga so'rov yuborish kodingiz ...
     try:
         async with SessionLocal() as db:
             await db.execute(text("SELECT 1"))

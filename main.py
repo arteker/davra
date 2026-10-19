@@ -32,7 +32,8 @@ if __name__ == "__main__":  # `python main.py` — modul "main" nomi bilan qayta
 from fastapi import FastAPI, Header, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from sqlalchemy import (Boolean, Column, Float, ForeignKey, Integer, String, Text,
+# BU YERGA text QO'SHILDI
+from sqlalchemy import (Boolean, Column, Float, ForeignKey, Integer, String, Text, text,
                         UniqueConstraint, delete, false, func, or_, select, true, update)
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -116,14 +117,15 @@ def make_engine():
     if url.startswith(("postgres://", "postgresql://")):
         url = url.replace("postgres://", "postgresql://", 1)
         u = urlsplit(url)
+        # sslmode va channel_binding kabi libpq-ga xos parametrlarni olib tashlaymiz
         q = [(k, v) for k, v in parse_qsl(u.query) if k not in ("sslmode", "channel_binding")]
+        # asyncpg uchun +asyncpg qo'shamiz
         url = urlunsplit(("postgresql+asyncpg", u.netloc, u.path, urlencode(q), ""))
         host = (u.hostname or "").lower()
         if host not in ("localhost", "127.0.0.1"):
-            kwargs["connect_args"] = {"ssl": True}  # Neon SSL talab qiladi
+            kwargs["connect_args"] = {"ssl": True}  # Neon uchun SSL majburiy
         kwargs.update(pool_pre_ping=True, pool_size=5, max_overflow=5, pool_recycle=300)
     return create_async_engine(url, **kwargs)
-
 
 engine = make_engine()
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
@@ -512,9 +514,15 @@ async def new_session(db, user, request=None):
     return token
 
 
+# YANGILANGAN HEALTH ENDPOINT (Bazani uyg'oq tutadi)
 @app.get("/api/health")
 async def health():
-    return {"ok": True}
+    try:
+        async with SessionLocal() as db:
+            await db.execute(text("SELECT 1"))
+        return {"ok": True, "db": "awake"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 
 @app.post("/api/register")

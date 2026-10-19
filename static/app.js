@@ -312,12 +312,15 @@ function connectWS() {
   };
   ws.onmessage = e => { let d; try { d = JSON.parse(e.data); } catch { return; } try { onWs(d); } catch (err) { console.error(err); } };
   ws.onclose = ev => {
-    S.wsOk = false; clearInterval(pingTimer);
-    if (ev.code === 4401) return doLogout(true);
-    $('conn').textContent = 'ulanmoqda…';
-    retry++; setTimeout(() => { if (S.token) connectWS(); }, Math.min(8000, 700 * retry));
+  S.wsOk = false; clearInterval(pingTimer);
+  if (ev.code === 4401) return doLogout(true);
+   $('conn').textContent = 'ulanmoqda…';
+    retry++;
+    // Vercel tez uzadi, shuning uchun tezroq qayta ulanamiz (maks 2 soniya)
+    setTimeout(() => { if (S.token) connectWS(); }, Math.min(2000, 300 * retry));
   };
-}
+  };
+
 function wsSend(obj) { if (S.ws && S.ws.readyState === 1) { S.ws.send(JSON.stringify(obj)); return true; } return false; }
 function sendVisibility() { wsSend({ type: 'visibility', visible: document.visibilityState === 'visible' }); }
 document.addEventListener('visibilitychange', () => { sendVisibility(); if (document.visibilityState === 'visible') { markRead(); updateBadge(); } });

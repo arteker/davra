@@ -1001,3 +1001,42 @@ button.lrow:hover,label.lrow:hover{background:var(--hover)}
   0% { transform: scale(0.88); opacity: 0.5; }
   100% { transform: scale(1.18); opacity: 0.95; }
 }
+/* ==========================================================================
+   Echimlar: Overflow, Sovg'alar konteyneri va Kichik Avatarlar
+   ========================================================================== */
+
+/* 1. Chat ro'yxatida va itemlarda avatar elementi qirqilib ketmasligi uchun */
+.item, .lrow, .drawer-profile, .chead, .hero {
+  overflow: visible !important;
+}
+
+.item > div:first-child {
+  position: relative;
+  flex: none;
+  overflow: visible !important;
+}
+
+/* Kichik avatarlarda 3D halqalar va zarrachalar mos ravishda kichikroq bo'lishi uchun */
+.avatar-3d-wrap {
+  overflow: visible !important;
+}
+
+/* Profil ichidagi Sovg'alar qutisi stili (2-rasm uchun echim) */
+.profile-gifts {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  padding: 12px 16px !important;
+  justify-content: center !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  clear: both !important;
+}
+
+.profile-gifts .muted {
+  width: 100% !important;
+  text-align: center !important;
+  font-size: 13px !important;
+  color: var(--muted) !important;
+  padding: 8px 0 !important;
+}

@@ -125,9 +125,13 @@ function fillProfile() {
   $('ownerVerified').hidden = !me.is_owner;
   $('profileName').value = me.display_name; $('profileUsername').value = '@' + me.username; $('profileBio').value = me.bio || '';
   
-  let giftBox = $('myProfileGifts');
-  if (!giftBox) { giftBox = h('div', { id: 'myProfileGifts', class: 'profile-gifts' }); $('profileViewBio').after(giftBox); }
-  loadProfileGifts(me.username, giftBox);
+  // Eski giftBox o'rniga:
+let giftBox = $('myProfileGifts');
+if (!giftBox) { 
+  giftBox = h('div', { id: 'myProfileGifts', class: 'profile-gifts' }); 
+  $('profileViewCards').after(giftBox); // info-cards'dan keyin qo'shamiz
+}
+loadProfileGifts(me.username, giftBox);
 }
 function setProfileEdit(on) {
   profileEdit = on; $('profileForm').hidden = !on; $('profileViewCards').hidden = on;
@@ -173,9 +177,13 @@ function openContact(chat) {
   $('contactStatus').textContent = lastSeenText(p); $('contactUsername').textContent = '@' + p.username;
   $('contactVerification').hidden = !p.is_owner; $('contactBio').textContent = p.bio || ''; $('contactBio').hidden = !p.bio;
   
-  let giftBox = $('contactGifts');
-  if (!giftBox) { giftBox = h('div', { id: 'contactGifts', class: 'profile-gifts' }); $('contactBio').after(giftBox); }
-  loadProfileGifts(p.username, giftBox);
+  // Eski contactGifts o'rniga:
+let giftBox = $('contactGifts');
+if (!giftBox) { 
+  giftBox = h('div', { id: 'contactGifts', class: 'profile-gifts' }); 
+  $('contactBio').after(giftBox); 
+}
+loadProfileGifts(p.username, giftBox);
   
   $('contactStart').textContent = 'Xabar yozish'; $('contactStart').onclick = () => { closeDlg('contactDialog'); openChat('direct', chat.id); };
   const mute = $('contactMute'); mute.textContent = isMuted(key) ? '🔔 Ovozni yoqish' : '🔕 Ovozsiz qilish';

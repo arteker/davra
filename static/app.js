@@ -36,14 +36,12 @@ const EMOJIS = ('😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🙂 😉 �
 const S = {
   token: null, me: null,
   chats: [], rooms: [], invites: [],
-  cur: null,                 // {kind:'direct'|'room', id}
+  cur: null,
   msgs: [], hasMore: false, hasNewer: false, detached: false, loadingOlder: false,
-  members: {},               // room_id -> [{id,...}]
-  reads: {},                 // room_id -> {uid: last_read_id}
-  reply: null, attach: null, forwardingMsg: null,
+  members: {}, reads: {}, reply: null, attach: null, forwardingMsg: null,
   filter: 'all', settings: null, ws: null, wsOk: false, newWhileUp: 0,
   typing: {}, tmp: 0, drafts: lsGet('drafts', {}),
-  nur: null,                 // Nur hamyoni: {balance, can_claim, streak, next_bonus, history, ...}
+  nur: null,
 };
 
 const DEFAULTS = () => ({
@@ -54,7 +52,6 @@ const DEFAULTS = () => ({
   advanced: { reduceMotion: false, scale: 100 },
 });
 
-// ---------------------------------------------------------------- tema va ko'rinish
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   const meta = document.querySelector('meta[name=theme-color]');
@@ -96,7 +93,6 @@ async function loadSettings() {
   } catch { /* oflayn — kesh ishlatiladi */ }
 }
 
-// ---------------------------------------------------------------- vaqt, matn
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
 function fmtTime(ts) {
   const d = new Date(ts * 1000);
@@ -153,18 +149,40 @@ function richText(text) {
   return frag;
 }
 
-// ---------------------------------------------------------------- avatar va belgilar
+// ---------------------------------------------------------------- AVATAR (Nurga qarab 3D o'zgaruvchan)
 const COLORS = ['#e17076', '#e5a550', '#7bc862', '#4fb4c8', '#6c9ce6', '#a881d9', '#ee7aae', '#3fa49a'];
+
 function avatarEl(entity, size) {
   const name = entity.display_name || entity.title || '?';
   const id = entity.id || 0;
-  const el = h('div', { class: 'avatar', style: `background-color:${COLORS[id % COLORS.length]}` + (size ? `;width:${size}px;height:${size}px;font-size:${Math.round(size * .38)}px` : '') });
+  const isPrem = entity.is_premium;
+  // Agar o'zimizni ko'rsak S.nur.balance dan olamiz, boshqalarniki entity.nur_balance dan
+  const nurBal = (S.me && S.me.id === id && S.nur) ? S.nur.balance : (entity.nur_balance || 0);
+  
+  let tierClass = '';
+  if (isPrem) {
+    if (nurBal >= 5000) tierClass = 'prem-avatar-tier3';
+    else if (nurBal >= 1000) tierClass = 'prem-avatar-tier2';
+    else tierClass = 'prem-avatar-tier1';
+  }
+
+  const el = h('div', { class: `avatar ${tierClass}`, style: `background-color:${COLORS[id % COLORS.length]}` + (size ? `;width:${size}px;height:${size}px;font-size:${Math.round(size * .38)}px` : '') });
   el.append((Array.from(name.trim())[0] || '?').toUpperCase());
+  
   if (entity.avatar_url) {
     const img = h('img', { class: 'av-img', src: entity.avatar_url, alt: '', loading: 'lazy' });
     img.addEventListener('error', () => img.remove());
     el.append(img);
   }
+
+  if (isPrem) {
+    const effect = h('div', { class: 'prem-avatar-effect' });
+    if (tierClass === 'prem-avatar-tier3') effect.innerHTML = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="url(#goldGrad)" stroke-width="3" stroke-dasharray="10 5"/><defs><linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#FFD700"/><stop offset="100%" stop-color="#FF8C00"/></linearGradient></defs></svg>`;
+    else if (tierClass === 'prem-avatar-tier2') effect.innerHTML = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="url(#purpGrad)" stroke-width="2" stroke-dasharray="4 8"/><defs><linearGradient id="purpGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#3b82f6"/></linearGradient></defs></svg>`;
+    else effect.innerHTML = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="#00d2ff" stroke-width="2"/></svg>`;
+    el.append(effect);
+  }
+
   return el;
 }
 
@@ -189,7 +207,6 @@ const premiumBadge = () => {
   return s;
 };
 
-// ---------------------------------------------------------------- toast va qalqib chiquvchi menyu
 let toastTimer;
 function toast(msg, ms = 2600) {
   const el = $('toast'); el.textContent = msg; el.hidden = false;
@@ -213,7 +230,6 @@ function showPopup(items, x, y, header) {
   menu.style.top = Math.max(8, Math.min(y, innerHeight - r.height - 8)) + 'px';
 }
 
-// ---------------------------------------------------------------- API
 async function api(path, opts = {}) {
   const headers = Object.assign({}, opts.headers || {});
   if (S.token) headers.Authorization = 'Bearer ' + S.token;
@@ -231,7 +247,6 @@ async function api(path, opts = {}) {
   return data;
 }
 
-// ---------------------------------------------------------------- kirish / ro'yxatdan o'tish
 let regMode = false;
 function setAuthMode(reg) {
   regMode = reg;
@@ -270,7 +285,6 @@ async function doLogout(silent) {
 }
 function closeAllDialogs() { $$('dialog[open]').forEach(d => { try { d.close(); } catch { /* */ } }); }
 
-// ---------------------------------------------------------------- ishga tushirish
 function boot() {
   applyTheme(lsGet('theme', 'dark'));
   if ('serviceWorker' in navigator) {
@@ -336,18 +350,28 @@ function connectWS() {
     S.wsOk = false; clearInterval(pingTimer);
     if (ev.code === 4401) return doLogout(true);
     $('conn').textContent = 'ulanmoqda…';
-    retry++; setTimeout(() => { if (S.token) connectWS(); }, 50);
+    retry++; setTimeout(() => { if (S.token) connectWS(); }, Math.min(2000, 300 * retry));
   };
 }
 function wsSend(obj) { if (S.ws && S.ws.readyState === 1) { S.ws.send(JSON.stringify(obj)); return true; } return false; }
 function sendVisibility() { wsSend({ type: 'visibility', visible: document.visibilityState === 'visible' }); }
-document.addEventListener('visibilitychange', () => { sendVisibility(); if (document.visibilityState === 'visible') { markRead(); updateBadge(); } });
+
+// WEBSOCKET XATOLIKNI TUZATISH (F5 talab qilmaslik uchun)
+document.addEventListener('visibilitychange', () => { 
+  sendVisibility(); 
+  if (document.visibilityState === 'visible') { 
+    markRead(); updateBadge(); 
+    // Agar oyna uyg'onganda WS yopilgan bo'lsa, darhol qayta ulanish
+    if (!S.ws || S.ws.readyState !== 1) connectWS();
+  } 
+});
+window.addEventListener('online', () => { if (S.token && (!S.ws || S.ws.readyState !== 1)) connectWS(); });
+
 async function resync() {
   await loadAll();
   if (S.cur && !S.detached) { try { await loadMessages(); } catch { /* */ } }
 }
 
-// ---------------------------------------------------------------- suhbatlar ro'yxati
 const keyOf = (kind, id) => kind === 'room' ? 'r:' + id : String(id);
 const itemKey = it => it.kind === 'room' ? 'r:' + it.data.id : String(it.data.id);
 const isMuted = key => S.settings && S.settings.muted.includes(key);
@@ -451,7 +475,6 @@ function updateBadge() {
   if (navigator.setAppBadge) { (n ? navigator.setAppBadge(n) : navigator.clearAppBadge()).catch(() => { }); }
 }
 
-// ---------------------------------------------------------------- qidiruv
 let searchTimer;
 function wireSearch() {
   $('search').addEventListener('input', e => {
@@ -507,7 +530,6 @@ async function startChat(username) {
   } catch (e) { toast(e.message); }
 }
 
-// ---------------------------------------------------------------- suhbatni ochish
 function saveDraft() {
   if (!S.cur) return;
   const key = keyOf(S.cur.kind, S.cur.id), v = $('input').value;
@@ -621,7 +643,6 @@ function closeChat() {
   renderList();
 }
 
-// ---------------------------------------------------------------- xabarlar chizish (diff)
 function isMine(m) { return m.sender_id === S.me.id; }
 function tickState(m) {
   if (!isMine(m)) return '';
@@ -648,8 +669,11 @@ function buildMsg(m, showName) {
   const isRoom = S.cur.kind === 'room';
   const el = h('div', { class: 'msg ' + (mine ? 'out' : 'in') + (m.failed ? ' fail' : '') + (m.deleted ? ' deleted' : ''), 'data-id': m.id });
   if (showName && isRoom && (!mine || (curData() || {}).room_type === 'channel')) {
-    el.append(h('div', { class: 'sender', style: `color:${COLORS[m.sender_id % COLORS.length]}` },
-      h('span', { text: m.sender_name || 'Foydalanuvchi' }), 
+    const nameSpan = m.sender_is_premium 
+        ? h('span', { class: 'premium-name-gradient', text: m.sender_name || 'Foydalanuvchi' })
+        : h('span', { text: m.sender_name || 'Foydalanuvchi' });
+    el.append(h('div', { class: 'sender', style: m.sender_is_premium ? '' : `color:${COLORS[m.sender_id % COLORS.length]}` },
+      nameSpan, 
       m.sender_is_owner ? verifiedBadge() : null,
       m.sender_is_premium ? premiumBadge() : null,
       m.sender_tag ? h('span', { class: 'tag-chip', text: m.sender_tag }) : null));
@@ -741,7 +765,6 @@ async function jumpTo(id) {
   } catch (e) { toast(e.message); }
 }
 
-// ---------------------------------------------------------------- ovozli xabar pleyeri
 const VOICE = { cur: null };
 function voiceEl(a) {
   const btn = h('button', { type: 'button', class: 'voice-btn', 'aria-label': 'Ijro etish', text: '▶' });
@@ -784,7 +807,6 @@ function stopVoice() {
 }
 function releaseVoice(el) { const v = el.querySelector && el.querySelector('.voice'); if (v && VOICE.cur && VOICE.cur.ui === v.__voice) VOICE.cur.ui = null; }
 
-// ---------------------------------------------------------------- reaksiya, kontekst menyu
 async function toggleReaction(m, emoji) {
   if (m.temp) return;
   const base = S.cur.kind === 'room' ? '/rooms/' : '/chats/';
@@ -863,7 +885,6 @@ function attachMsgInteractions() {
   }, { passive: true });
 }
 
-// ---------------------------------------------------------------- javob
 function startReply(m) {
   const name = isMine(m) ? 'Siz' : (m.sender_name || (S.cur.kind === 'direct' && curData().peer.display_name) || 'Xabar');
   S.reply = { id: m.id, name, text: msgPreview(m) };
@@ -871,7 +892,6 @@ function startReply(m) {
 }
 function cancelReply() { S.reply = null; $('replyBar').hidden = true; }
 
-// ---------------------------------------------------------------- yuborish
 function autoGrow() { const i = $('input'); i.style.height = 'auto'; i.style.height = Math.min(i.scrollHeight, 140) + 'px'; }
 function syncSendBtn() {
   const has = $('input').value.trim().length > 0 || !!S.attach;
@@ -925,7 +945,6 @@ async function sendCurrent() {
   input.focus();
 }
 
-// ---------------------------------------------------------------- fayl yuklash
 function uploadFile(blob, { kind, name, duration, onProgress }) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -965,7 +984,6 @@ function clearAttach() {
   S.attach = null; $('attachBar').hidden = true; $('attachThumb').replaceChildren(); syncSendBtn();
 }
 
-// ---------------------------------------------------------------- ovoz yozish
 const REC = { rec: null, chunks: [], stream: null, timer: null, start: 0, cancelled: false };
 function pickMime() {
   const list = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus', 'audio/ogg'];
@@ -985,7 +1003,7 @@ async function startRecording() {
   $('composer').hidden = true; $('recBar').hidden = false; $('recTime').textContent = '0:00';
   REC.timer = setInterval(() => {
     const s = (Date.now() - REC.start) / 1000; $('recTime').textContent = fmtDur(s);
-    if (s >= 120) stopRecording(false);
+    if (s >= (S.me.is_premium ? 600 : 120)) stopRecording(false); // Premiumlarga 10 daqiqa
   }, 250);
 }
 function stopRecording(cancel) {
@@ -1004,7 +1022,7 @@ async function finishRecording() {
   let blob = new Blob(REC.chunks, { type: (rec.mimeType || 'audio/webm').split(';')[0] });
   toast('Tayyorlanmoqda…', 1500);
   try { blob = await toWav(blob); } catch { /* asl format ishlatiladi */ }
-  if (blob.size > 4 * 1024 * 1024) return toast('Ovozli xabar juda katta');
+  if (blob.size > 15 * 1024 * 1024) return toast('Ovozli xabar juda katta');
   try {
     const meta = await uploadFile(blob, { kind: 'voice', duration: dur.toFixed(1) });
     submitMessage('', meta);
@@ -1034,7 +1052,6 @@ function openLightbox(src, name) {
   $('lightbox').showModal();
 }
 
-// ---------------------------------------------------------------- WS hodisalari
 function inCurrent(kind, id) { return S.cur && S.cur.kind === kind && S.cur.id === id; }
 function onWs(d) {
   switch (d.type) {
@@ -1077,6 +1094,7 @@ function onWs(d) {
       if (S.nur) S.nur.balance = d.balance; else loadNur();
       if (d.tx && d.tx.kind === 'grant') toast('✦ Davra sizga ' + d.tx.amount + ' Nur sovg‘a qildi', 4200);
       if (typeof onNurUpdate === 'function') onNurUpdate();
+      renderList(); // Avatar yangilanishi uchun
       break;
     case 'gift_received': {
       const g = d.gift;
@@ -1152,7 +1170,6 @@ function markRead() {
   d.unread = 0; renderList();
 }
 
-// ---------------------------------------------------------------- bildirishnoma
 let audioCtx = null;
 function beep() {
   try {
@@ -1178,7 +1195,6 @@ function notify(kind, id, m) {
   }
 }
 
-// ---------------------------------------------------------------- Push
 const b64ToU8 = b64 => { const p = '='.repeat((4 - b64.length % 4) % 4); const s = atob((b64 + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(s, c => c.charCodeAt(0)); };
 async function pushStatus() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return 'unsupported';
@@ -1212,7 +1228,6 @@ async function pushResync() {
   } catch { /* */ }
 }
 
-// ---------------------------------------------------------------- hodisalarni ulash
 function wireUi() {
   wireSearch(); attachMsgInteractions();
   $('menuToggle').onclick = () => openDrawer();

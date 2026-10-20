@@ -23,7 +23,6 @@ function showGiftToast(g) {
 
 async function openGiftStore(chat) {
   const peer = chat.peer;
-  // XATO SHU QATORDAGI QO'SHTIRNOQLARDA EDI (text: `Sovg'a yuborish')
   const dlg = h('dialog', { class: 'sheet narrow' }, h('div', { class: 'sheet-head' }, h('h2', { text: "Sovg'a yuborish" })), 
     h('p', { class: 'muted', style: 'text-align:center; padding: 0 16px;' }, `${peer.display_name} ga sovg'a tanlang`));
   
@@ -871,13 +870,11 @@ function openSendNur(chat) {
 
 // ---------------------------------------------------------------- ulash
 function wirePanels() {
-  // dialog yopish tugmalari va fon bosilganda yopish
   const closers = { closeSettings: 'settingsDialog', closeContacts: 'contactsDialog', closeSaved: 'savedDialog', closeAbout: 'aboutDialog', closeRoomDialog: 'roomDialog', closeCreateRoom: 'createRoomDialog', closeForward: 'forwardDialog', cancelEditMessage: 'editMessageDialog', closeProfileBtn: 'profileDialog' };
   for (const [btn, dlg] of Object.entries(closers)) $(btn).onclick = () => closeDlg(dlg);
   $$('dialog.sheet').forEach(d => d.addEventListener('click', e => { if (e.target === d) d.close(); }));
   $('settingsBack').onclick = settingsPop;
   $('settingsDialog').addEventListener('close', () => { ST.stack = []; });
-  // yon menyu
   const drawer = $('appMenu');
   drawer.addEventListener('click', e => { if (e.target === drawer) drawer.close(); });
   const via = (id, fn) => { $(id).onclick = () => { drawer.close(); fn(); }; };
@@ -888,14 +885,12 @@ function wirePanels() {
   $('menuNightMode').addEventListener('click', e => { if (e.target.closest('.switch')) return; applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'); });
   $('menuDarkToggle').addEventListener('change', e => applyTheme(e.target.checked ? 'dark' : 'light'));
   $('menuLogout').onclick = async () => { drawer.close(); if (await confirmBox({ title: 'Chiqish', text: 'Akkauntdan chiqmoqchimisiz?', ok: 'Chiqish', danger: true })) doLogout(); };
-  // profil
   $('editProfileToggle').onclick = () => setProfileEdit(!profileEdit);
   $('profileForm').addEventListener('submit', saveProfile);
   $('changeAvatar').onclick = () => $('avatarFile').click();
   $('avatarFile').onchange = e => { const f = e.target.files[0]; e.target.value = ''; changeAvatar(f); };
   $('removeAvatar').onclick = removeAvatar;
   $('copyUsername').onclick = () => copyText('@' + S.me.username);
-  // boshqalar
   $('contactsSearchInput').addEventListener('input', renderContacts);
   $('savedForm').addEventListener('submit', addSaved);
   $('forwardSearch').addEventListener('input', renderForward);

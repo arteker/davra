@@ -481,3 +481,47 @@ button.lrow:hover,label.lrow:hover{background:var(--hover)}
   100% { transform: scale(1) rotate(0); opacity: 1; }
 }
 .gift-toast-icon { width: 40px; height: 40px; animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+/* Premium 3D Animated Avatars */
+.prem-avatar-tier1 {
+  box-shadow: 0 0 12px rgba(0, 210, 255, 0.6);
+  border: 2px solid #00d2ff;
+  animation: pulseBlue 2s infinite alternate;
+}
+.prem-avatar-tier2 {
+  box-shadow: 0 0 18px rgba(169, 120, 255, 0.8);
+  border: 3px dashed #c084fc;
+  animation: rotatePurp 6s linear infinite;
+}
+.prem-avatar-tier3 {
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.9);
+  border: 3px double #FFD700;
+  animation: pulseGold 1.5s infinite alternate;
+}
+.prem-avatar-effect {
+  position: absolute;
+  inset: -6px;
+  pointer-events: none;
+  z-index: 2;
+}
+.prem-avatar-effect svg {
+  width: 100%;
+  height: 100%;
+  animation: spin 8s linear infinite;
+}
+
+@keyframes pulseBlue {
+  0% { box-shadow: 0 0 8px rgba(0, 210, 255, 0.4); }
+  100% { box-shadow: 0 0 20px rgba(0, 210, 255, 0.9); }
+}
+@keyframes rotatePurp {
+  0% { transform: rotate(0deg); box-shadow: 0 0 12px rgba(169, 120, 255, 0.6); }
+  50% { box-shadow: 0 0 25px rgba(169, 120, 255, 1); }
+  100% { transform: rotate(360deg); box-shadow: 0 0 12px rgba(169, 120, 255, 0.6); }
+}
+@keyframes pulseGold {
+  0% { transform: scale(1); box-shadow: 0 0 15px rgba(255, 215, 0, 0.6); }
+  100% { transform: scale(1.05); box-shadow: 0 0 40px rgba(255, 215, 0, 1); }
+}
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}

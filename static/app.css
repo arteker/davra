@@ -852,3 +852,76 @@ button.lrow:hover,label.lrow:hover{background:var(--hover)}
   0% { transform: rotate(90deg) translateX(28px) rotate(-90deg); }
   100% { transform: rotate(450deg) translateX(28px) rotate(-450deg); }
 }
+/* ==========================================================================
+   Davra — OWNER (Loyiha Egasi) uchun Maxsus Afsonaviy 3D Avatar
+   ========================================================================== */
+
+/* Owner konteyneri */
+.tier-owner .avatar-core {
+  border: 3px solid #ff3366 !important;
+  background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%) !important;
+  box-shadow: 0 0 35px rgba(255, 51, 102, 0.9), 
+              0 0 15px rgba(255, 215, 0, 0.8), 
+              inset 0 0 20px rgba(255, 255, 255, 0.6) !important;
+  animation: floatOwner3D 4s ease-in-out infinite !important;
+}
+
+/* Plazmali orqa fon porlashi */
+.tier-owner .avatar-glow-bg {
+  position: absolute; inset: -18px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 51, 102, 0.75) 0%, rgba(255, 215, 0, 0.3) 50%, transparent 75%);
+  z-index: 1; 
+  animation: pulseOwnerBg 1.6s ease-in-out infinite alternate;
+}
+
+/* Outer Portal Halqasi 1 (Oltin) */
+.tier-owner .avatar-ring.ring-1 {
+  position: absolute; border-radius: 50%;
+  border: 2.5px solid transparent;
+  border-top-color: #FFD700; border-bottom-color: #ff3366;
+  inset: -9px; z-index: 2; 
+  animation: spinRing 2.8s linear infinite;
+}
+
+/* Outer Portal Halqasi 2 (Alovli Qizil) */
+.tier-owner .avatar-ring.ring-2 {
+  position: absolute; border-radius: 50%;
+  border: 2px dashed #ff0844;
+  inset: -15px; z-index: 2; 
+  animation: spinRing 4.5s linear infinite reverse;
+}
+
+/* Owner Toji (Crown) - Avatar tepasida qalqib turadi */
+.tier-owner::before {
+  content: '👑';
+  position: absolute;
+  top: -22px;
+  z-index: 30;
+  font-size: 22px;
+  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.9));
+  animation: crownFloat 2.5s ease-in-out infinite alternate;
+}
+
+/* Owner Zarrachalari */
+.tier-owner .avatar-particle {
+  background: #FFD700;
+  box-shadow: 0 0 12px #FFD700, 0 0 6px #ff3366;
+  width: 6px;
+  height: 6px;
+}
+
+/* OWNER ANIMATSIYALARI */
+@keyframes floatOwner3D {
+  0%, 100% { transform: translateZ(0) rotateX(0) rotateY(0) scale(1); }
+  50% { transform: translateZ(16px) rotateX(8deg) rotateY(-8deg) scale(1.04); }
+}
+
+@keyframes pulseOwnerBg {
+  0% { transform: scale(0.9); opacity: 0.6; }
+  100% { transform: scale(1.22); opacity: 1; }
+}
+
+@keyframes crownFloat {
+  0% { transform: translateY(0) scale(1) rotate(-5deg); }
+  100% { transform: translateY(-6px) scale(1.15) rotate(5deg); }
+}

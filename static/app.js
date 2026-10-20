@@ -157,37 +157,37 @@ function avatarEl(entity, size) {
   entity = entity || {};
   const name = entity.display_name || entity.title || '?';
   const id = entity.id || 0;
+  const isOwner = !!entity.is_owner; // Owner ekanligini tekshirish
   const isPrem = !!entity.is_premium;
   
-  // Balans va Premium darajasini aniqlash
   const nurBal = (S.me && S.me.id === id && S.nur) 
     ? S.nur.balance 
     : (entity.nur_balance || 0);
 
-  let tier = 0;
-  if (isPrem) {
-    if (nurBal >= 5000) tier = 3;
-    else if (nurBal >= 3000) tier = 2;
-    else tier = 1; // Kamida 1000+ yoki Premium bo'lsa
+  // Darajani aniqlash (Owner har doim eng yuqori darajada)
+  let tierClass = '';
+  if (isOwner) {
+    tierClass = 'tier-owner';
+  } else if (isPrem) {
+    if (nurBal >= 5000) tierClass = 'tier-3';
+    else if (nurBal >= 3000) tierClass = 'tier-2';
+    else tierClass = 'tier-1';
   }
 
   // Asosiy 3D O‘rovchi Konteyner
   const wrap = h('div', { 
-    class: `avatar-3d-wrap tier-${tier}`, 
+    class: `avatar-3d-wrap ${tierClass}`, 
     style: size ? `width:${size}px;height:${size}px;` : '' 
   });
 
-  // Agar Premium darajasi mavjud bo'lsa — Effektlarni joylaymiz
-  if (tier > 0) {
-    // Background Glow
+  if (tierClass) {
+    // Porlash (Glow) va 3D Halqalar
     wrap.append(h('div', { class: 'avatar-glow-bg' }));
-    
-    // 3D Orbital Halqalar
     wrap.append(h('div', { class: 'avatar-ring ring-1' }));
-    if (tier >= 2) wrap.append(h('div', { class: 'avatar-ring ring-2' }));
+    wrap.append(h('div', { class: 'avatar-ring ring-2' }));
 
     // Kosmik Zarrachalar
-    const particleCount = tier === 3 ? 4 : (tier === 2 ? 3 : 2);
+    const particleCount = isOwner ? 4 : (tierClass === 'tier-3' ? 4 : 2);
     for (let i = 1; i <= particleCount; i++) {
       wrap.append(h('div', { class: `avatar-particle p-${i}` }));
     }

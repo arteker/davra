@@ -1,12 +1,4 @@
-"""Davra Nur: ichki valyuta (hamyon, kunlik bonus, suhbatda do'stga o'tkazma, tarix).
-
-Qoidalar:
-- Balansni FAQAT shu modul o'zgartiradi; har bir o'zgarish `nur_transactions` jadvaliga yoziladi.
-- Barcha o'zgarishlar bitta tranzaksiyada va shartli UPDATE bilan (balance >= miqdor, last_bonus_day < bugun),
-  shuning uchun ikki marta tez bosish yoki parallel so'rovlar balansni manfiy qila olmaydi / bonusni ikki marta bermaydi.
-- Bazada CHECK (balance >= 0) ham bor — oxirgi himoya chizig'i.
-Muhit o'zgaruvchilari (ixtiyoriy): NUR_TZ_OFFSET_HOURS (standart 5, Toshkent), NUR_MAX_TRANSFER (standart 5000).
-"""
+"""Davra Nur: ichki valyuta (hamyon, kunlik bonus, suhbatda do'stga o'tkazma, tarix)."""
 import logging
 import os
 import time
@@ -23,29 +15,27 @@ Base = core.Base
 router = APIRouter(prefix="/api")
 
 TZ_OFFSET = int(float(os.getenv("NUR_TZ_OFFSET_HOURS", "5")) * 3600)
-BONUS_BASE, BONUS_STEP, BONUS_STEPS_MAX = 10, 2, 5      # 10 Nur, har ketma-ket kunga +2, eng ko'pi 20
+BONUS_BASE, BONUS_STEP, BONUS_STEPS_MAX = 10, 2, 5
 MAX_TRANSFER = int(os.getenv("NUR_MAX_TRANSFER", "5000"))
 MAX_GRANT = 1_000_000
 HISTORY_PAGE = 30
 
 
-# ------------------------------------------------------------------ modellar
 class NurAccount(Base):
     __tablename__ = "nur_accounts"
     __table_args__ = (CheckConstraint("balance >= 0", name="ck_nur_balance_nonneg"),)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     balance = Column(Integer, nullable=False, default=0, server_default="0")
-    last_bonus_day = Column(Integer, nullable=False, default=0, server_default="0")  # oxirgi bonus olingan kun (mahalliy)
-    streak = Column(Integer, nullable=False, default=0, server_default="0")          # ketma-ket kunlar
+    last_bonus_day = Column(Integer, nullable=False, default=0, server_default="0")
+    streak = Column(Integer, nullable=False, default=0, server_default="0")
     created_at = Column(Float, nullable=False)
 
 
 class NurTransaction(Base):
-    """Daftar (ledger): amount ishorali (+ kirim, - chiqim), balance_after — shu amaldan keyingi balans."""
     __tablename__ = "nur_transactions"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
-    kind = Column(String(12), nullable=False)   # bonus | sent | received | grant
+    kind = Column(String(12), nullable=False)
     amount = Column(Integer, nullable=False)
     balance_after = Column(Integer, nullable=False)
     peer_id = Column(Integer, nullable=True)
@@ -53,9 +43,7 @@ class NurTransaction(Base):
     created_at = Column(Float, nullable=False)
 
 
-# ------------------------------------------------------------------ yordamchilar
 def _today(now=None):
-    """Mahalliy (Toshkent) kun raqami — bonus shu bo'yicha kuniga bir marta beriladi."""
     return int(((now or time.time()) + TZ_OFFSET) // 86400)
 
 
@@ -70,20 +58,26 @@ def _clean_note(raw):
     return note
 
 
+# YANGILANGAN _ACCOUNT FUNKSIYASI
 async def _account(db, uid):
     acc = await db.get(NurAccount, uid)
     if acc:
+        # Foydalanuvchi ma'lumotlariga balansni biriktiramiz (Avatar uchun)
+        user = await db.get(core.User, uid)
+        if user: user.nur_balance = acc.balance
         return acc
     db.add(NurAccount(user_id=uid, balance=0, last_bonus_day=0, streak=0, created_at=time.time()))
     try:
         await db.commit()
-    except IntegrityError:  # boshqa so'rov bir vaqtda yaratib qo'ygan
+    except IntegrityError:
         await db.rollback()
-    return await db.get(NurAccount, uid)
+    acc = await db.get(NurAccount, uid)
+    user = await db.get(core.User, uid)
+    if user: user.nur_balance = acc.balance
+    return acc
 
 
 async def _fresh(db, uid):
-    """Hisobni bazadan yangidan o'qiydi (sessiya keshiga ishonmaydi)."""
     await _account(db, uid)
     return (await db.execute(select(NurAccount).where(NurAccount.user_id == uid)
                              .execution_options(populate_existing=True))).scalar_one()
@@ -93,7 +87,7 @@ async def _state(db, uid):
     acc = await _fresh(db, uid)
     day = _today()
     can = acc.last_bonus_day < day
-    alive = acc.last_bonus_day >= day - 1          # ketma-ketlik uzilmagan
+    alive = acc.last_bonus_day >= day - 1
     return {"balance": acc.balance, "can_claim": can,
             "streak": acc.streak if alive else 0,
             "next_bonus": _bonus_for(acc.streak + 1 if alive else 1),
@@ -132,7 +126,6 @@ def _notify(uid, balance, tx=None):
     return core.hub.send(uid, event)
 
 
-# ------------------------------------------------------------------ API
 @router.get("/nur")
 async def get_nur(authorization: str = Header(None)):
     async with core.SessionLocal() as db:
@@ -162,7 +155,6 @@ async def claim_bonus(authorization: str = Header(None)):
             raise HTTPException(409, "Bugungi bonus allaqachon olingan")
         streak = acc.streak + 1 if acc.last_bonus_day == day - 1 else 1
         amount = _bonus_for(streak)
-        # Shartli UPDATE: parallel ikkinchi so'rov uchun rowcount 0 bo'ladi — bonus ikki marta berilmaydi
         res = await db.execute(update(NurAccount)
                                .where(NurAccount.user_id == user.id, NurAccount.last_bonus_day < day)
                                .values(balance=NurAccount.balance + amount, last_bonus_day=day, streak=streak)
@@ -208,10 +200,10 @@ async def transfer(body: TransferIn, authorization: str = Header(None)):
             peer_id: update(NurAccount).where(NurAccount.user_id == peer_id)
             .values(balance=NurAccount.balance + body.amount),
         }
-        for uid in sorted(ops):  # doim id o'sish tartibida — ikki tomonlama parallel o'tkazmada deadlock bo'lmasin
+        for uid in sorted(ops):
             res = await db.execute(ops[uid].execution_options(synchronize_session=False))
             if res.rowcount != 1:
-                await db.rollback()  # kreditni ham bekor qiladi
+                await db.rollback()
                 raise HTTPException(400, "Nur yetarli emas")
         mine, theirs = await _balance(db, user.id), await _balance(db, peer_id)
         now = time.time()
@@ -221,7 +213,6 @@ async def transfer(body: TransferIn, authorization: str = Header(None)):
                               peer_id=user.id, note=note, created_at=now))
         await db.commit()
         chat_id = chat.id
-    # Pul o'tdi. Suhbatga xabar yozish — qo'shimcha (xato bo'lsa o'tkazma bekor bo'lmaydi)
     text = f"✦ {body.amount} Nur yubordi" + (f"\n{note}" if note else "")
     try:
         await core.post_direct(user.id, chat_id, text)
@@ -240,7 +231,6 @@ class GrantIn(BaseModel):
 
 @router.post("/nur/grant")
 async def grant(body: GrantIn, authorization: str = Header(None)):
-    """Faqat rasmiy ega: foydalanuvchiga Nur sovg'a qiladi (yangi Nur yaratadi; sinov va aksiyalar uchun)."""
     if not 1 <= body.amount <= MAX_GRANT:
         raise HTTPException(400, f"Miqdor 1 dan {MAX_GRANT} gacha bo'lsin")
     note = _clean_note(body.note)
@@ -265,5 +255,4 @@ async def grant(body: GrantIn, authorization: str = Header(None)):
     return {"ok": True, "username": target.username, "balance": balance}
 
 
-# ------------------------------------------------------------------ ulash
 core.app.include_router(router)

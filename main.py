@@ -450,8 +450,8 @@ def ser_user(u):
             "online": False if hidden else hub.online(u.id),
             "last_seen": None if hidden else u.last_seen,
             "hidden": hidden, "hide_seen": hidden, "allow_requests": bool(u.allow_requests),
-            # YANGI QO'SHILGAN QATOR:
-            "is_premium": is_prem}
+            "is_premium": is_prem,
+            "nur_balance": getattr(u, 'nur_balance', 0)} # <-- YANGI QO'SHILDI
 
 def ser_msg(m):
     deleted = bool(m.deleted)

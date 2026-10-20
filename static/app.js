@@ -157,6 +157,7 @@ function avatarEl(entity, size) {
   const id = entity.id || 0;
   const isPrem = entity.is_premium;
   // Agar o'zimizni ko'rsak S.nur.balance dan olamiz, boshqalarniki entity.nur_balance dan
+    // Agar o'zimizni ko'rsak S.nur.balance dan olamiz, boshqalarniki entity.nur_balance dan
   const nurBal = (S.me && S.me.id === id && S.nur) ? S.nur.balance : (entity.nur_balance || 0);
   
   let tierClass = '';

@@ -149,25 +149,39 @@ function richText(text) {
   return frag;
 }
 
-// ---------------------------------------------------------------- AVATAR (Nurga qarab 3D o'zgaruvchan)
+// ---------------------------------------------------------------- AVATAR (3D Kosmik Effekt)
 const COLORS = ['#e17076', '#e5a550', '#7bc862', '#4fb4c8', '#6c9ce6', '#a881d9', '#ee7aae', '#3fa49a'];
 
 function avatarEl(entity, size) {
   const name = entity.display_name || entity.title || '?';
   const id = entity.id || 0;
   const isPrem = entity.is_premium;
-  // Agar o'zimizni ko'rsak S.nur.balance dan olamiz, boshqalarniki entity.nur_balance dan
-    // Agar o'zimizni ko'rsak S.nur.balance dan olamiz, boshqalarniki entity.nur_balance dan
   const nurBal = (S.me && S.me.id === id && S.nur) ? S.nur.balance : (entity.nur_balance || 0);
   
-  let tierClass = '';
+  let tier = 0;
   if (isPrem) {
-    if (nurBal >= 5000) tierClass = 'prem-avatar-tier3';
-    else if (nurBal >= 1000) tierClass = 'prem-avatar-tier2';
-    else tierClass = 'prem-avatar-tier1';
+    if (nurBal >= 5000) tier = 3;
+    else if (nurBal >= 3000) tier = 2;
+    else if (nurBal >= 1000) tier = 1;
   }
 
-  const el = h('div', { class: `avatar ${tierClass}`, style: `background-color:${COLORS[id % COLORS.length]}` + (size ? `;width:${size}px;height:${size}px;font-size:${Math.round(size * .38)}px` : '') });
+  // Asosiy konteyner (3D ko'rinish beruvchi)
+  const wrap = h('div', { class: `avatar-3d-wrap tier-${tier}`, style: size ? `width:${size}px;height:${size}px;` : '' });
+  
+  if (tier > 0) {
+    // Orqa fondagi porlash
+    wrap.append(h('div', { class: 'avatar-glow-bg' }));
+    
+    // Aylanuvchi 3D halqalar
+    wrap.append(h('div', { class: 'avatar-ring ring-1' }));
+    wrap.append(h('div', { class: 'avatar-ring ring-2' }));
+    
+    // Suzuvchi zarrachalar
+    for(let i=1; i<=4; i++) wrap.append(h('div', { class: `avatar-particle p-${i}` }));
+  }
+
+  // Asosiy rasm (yoki harf)
+  const el = h('div', { class: 'avatar-core', style: `background-color:${COLORS[id % COLORS.length]}` + (size ? `;font-size:${Math.round(size * .38)}px` : '') });
   el.append((Array.from(name.trim())[0] || '?').toUpperCase());
   
   if (entity.avatar_url) {
@@ -175,16 +189,9 @@ function avatarEl(entity, size) {
     img.addEventListener('error', () => img.remove());
     el.append(img);
   }
+  wrap.append(el);
 
-  if (isPrem) {
-    const effect = h('div', { class: 'prem-avatar-effect' });
-    if (tierClass === 'prem-avatar-tier3') effect.innerHTML = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="url(#goldGrad)" stroke-width="3" stroke-dasharray="10 5"/><defs><linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#FFD700"/><stop offset="100%" stop-color="#FF8C00"/></linearGradient></defs></svg>`;
-    else if (tierClass === 'prem-avatar-tier2') effect.innerHTML = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="url(#purpGrad)" stroke-width="2" stroke-dasharray="4 8"/><defs><linearGradient id="purpGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#3b82f6"/></linearGradient></defs></svg>`;
-    else effect.innerHTML = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="#00d2ff" stroke-width="2"/></svg>`;
-    el.append(effect);
-  }
-
-  return el;
+  return wrap;
 }
 
 const verifiedBadge = () => {
@@ -357,12 +364,11 @@ function connectWS() {
 function wsSend(obj) { if (S.ws && S.ws.readyState === 1) { S.ws.send(JSON.stringify(obj)); return true; } return false; }
 function sendVisibility() { wsSend({ type: 'visibility', visible: document.visibilityState === 'visible' }); }
 
-// WEBSOCKET XATOLIKNI TUZATISH (F5 talab qilmaslik uchun)
+// Xatolikni to'g'rilash (F5 talab qilmaslik uchun)
 document.addEventListener('visibilitychange', () => { 
   sendVisibility(); 
   if (document.visibilityState === 'visible') { 
     markRead(); updateBadge(); 
-    // Agar oyna uyg'onganda WS yopilgan bo'lsa, darhol qayta ulanish
     if (!S.ws || S.ws.readyState !== 1) connectWS();
   } 
 });
@@ -1004,7 +1010,7 @@ async function startRecording() {
   $('composer').hidden = true; $('recBar').hidden = false; $('recTime').textContent = '0:00';
   REC.timer = setInterval(() => {
     const s = (Date.now() - REC.start) / 1000; $('recTime').textContent = fmtDur(s);
-    if (s >= (S.me.is_premium ? 600 : 120)) stopRecording(false); // Premiumlarga 10 daqiqa
+    if (s >= (S.me.is_premium ? 600 : 120)) stopRecording(false); // Premiumlar uchun 10 daqiqa
   }, 250);
 }
 function stopRecording(cancel) {
@@ -1159,7 +1165,7 @@ function incoming(kind, id, m, tempId, listItem) {
 function onProfileUpdate(u) {
   if (u.id === S.me.id) { S.me = Object.assign(S.me, u); if (typeof refreshMenuProfile === 'function') refreshMenuProfile(); }
   for (const c of S.chats) if (c.peer.id === u.id) c.peer = u;
-  for (const k of Object.keys(S.members)) { const mm = S.members[k].find(x => x.id === u.id); if (mm) Object.assign(mm, { display_name: u.display_name, avatar_url: u.avatar_url, is_premium: u.is_premium }); }
+  for (const k of Object.keys(S.members)) { const mm = S.members[k].find(x => x.id === u.id); if (mm) Object.assign(mm, { display_name: u.display_name, avatar_url: u.avatar_url, is_premium: u.is_premium, nur_balance: u.nur_balance }); }
   for (const m of S.msgs) if (m.sender_id === u.id && m.sender_name !== undefined) m.sender_name = u.display_name;
   if (S.cur) { renderHead(); renderMsgs(true); }
   renderList();

@@ -39,7 +39,7 @@ function askText({ title, label, value = '', max = 50, ok = 'Saqlash', placehold
 function refreshMenuProfile() {
   const me = S.me; if (!me) return;
   $('menuAvatar').replaceChildren(avatarEl(me, 56));
-  $('menuDisplayName').replaceChildren(me.display_name, me.is_owner ? verifiedBadge() : '');
+  $('menuDisplayName').replaceChildren(me.display_name, me.is_owner ? verifiedBadge() : '', me.is_premium ? premiumBadge() : '');
   $('menuUsername').textContent = '@' + me.username;
   $('menuDarkToggle').checked = document.documentElement.dataset.theme !== 'light';
 }
@@ -58,7 +58,7 @@ function openProfile(edit) {
 function fillProfile() {
   const me = S.me;
   $('profileAvatarLarge').replaceChildren(avatarEl(me, 96));
-  $('profileHeroName').replaceChildren(me.display_name, me.is_owner ? verifiedBadge() : '');
+  $('profileHeroName').replaceChildren(me.display_name, me.is_owner ? verifiedBadge() : '', me.is_premium ? premiumBadge() : '');
   $('profileViewUsername').textContent = '@' + me.username;
   $('profileViewBio').textContent = me.bio || 'Bio qo‘shilmagan';
   $('ownerVerified').hidden = !me.is_owner;
@@ -99,12 +99,12 @@ function renderContacts() {
   const box = $('contactsList'); box.replaceChildren();
   if (!list.length) box.append(h('div', { class: 'emptyl', text: q ? 'Hech kim topilmadi' : 'Hali kontakt yo‘q. Qidiruvdan odam toping va suhbat boshlang.' }));
   for (const c of list) box.append(h('button', { type: 'button', class: 'item', onclick: () => { closeDlg('contactsDialog'); openChat('direct', c.id); } },
-    avatarEl(c.peer), h('div', { class: 'ib' }, h('div', { class: 'nm' }, c.peer.display_name, c.peer.is_owner ? verifiedBadge() : null), h('div', { class: 'pv', text: lastSeenText(c.peer) + ' · @' + c.peer.username }))));
+    avatarEl(c.peer), h('div', { class: 'ib' }, h('div', { class: 'nm' }, c.peer.display_name, c.peer.is_owner ? verifiedBadge() : null, c.peer.is_premium ? premiumBadge() : null), h('div', { class: 'pv', text: lastSeenText(c.peer) + ' · @' + c.peer.username }))));
 }
 function openContact(chat) {
   const p = chat.peer, key = keyOf('direct', chat.id);
   $('contactAvatar').replaceChildren(avatarEl(p, 96));
-  $('contactTitle').replaceChildren(p.display_name, p.is_owner ? verifiedBadge() : '');
+  $('contactTitle').replaceChildren(p.display_name, p.is_owner ? verifiedBadge() : '', p.is_premium ? premiumBadge() : '');
   $('contactStatus').textContent = lastSeenText(p); $('contactUsername').textContent = '@' + p.username;
   $('contactVerification').hidden = !p.is_owner; $('contactBio').textContent = p.bio || ''; $('contactBio').hidden = !p.bio;
   $('contactStart').textContent = 'Xabar yozish'; $('contactStart').onclick = () => { closeDlg('contactDialog'); openChat('direct', chat.id); };
@@ -260,7 +260,7 @@ function roomMain(body, room) {
     const inp = h('input', { class: 'inline-input', maxlength: 16, placeholder: 'dizayner' });
     inp.addEventListener('change', async () => { try { await api('/rooms/' + room.id + '/members/' + S.me.id + '/tag', { method: 'PUT', body: { tag: inp.value } }); toast('Yorliq saqlandi'); RP.members = null; } catch (e) { toast(e.message); } });
     mine.append(inp); body.append(mine);
-    loadMembers().then(ms => { const me = ms.find(m => m.id === S.me.id); if (me) inp.value = me.tag || ''; }).catch(() => {});
+    loadMembers().then(ms => { const me = ms.find(m => m.id === S.me.id); if (me) inp.value = me.tag || ''; }).catch(() => { });
   }
   body.append(gap());
   if (room.role === 'owner') {
@@ -332,7 +332,7 @@ function canManage(room, m) {
 function memberRow(room, m, opts = {}) {
   const isMe = m.id === S.me.id, R = room.rights || {};
   const row = h('div', { class: 'room-member' + (opts.onclick ? ' clickable' : ''), onclick: opts.onclick }, avatarEl(m, 40),
-    h('div', { class: 'room-member-name' }, h('b', {}, m.display_name + (isMe ? ' (siz)' : ''), m.is_owner ? verifiedBadge() : null, m.tag ? h('span', { class: 'tag-chip', text: m.tag }) : null),
+    h('div', { class: 'room-member-name' }, h('b', {}, m.display_name + (isMe ? ' (siz)' : ''), m.is_owner ? verifiedBadge() : null, m.is_premium ? premiumBadge() : null, m.tag ? h('span', { class: 'tag-chip', text: m.tag }) : null),
       h('span', { text: '@' + m.username })),
     m.role !== 'member' ? h('span', { class: 'role-pill', text: ROLE[m.role] }) : null);
   if (opts.onclick) return row;
@@ -464,7 +464,7 @@ const gap = () => h('div', { class: 'gap' });
 function pageMain(body) {
   const me = S.me;
   body.append(h('button', { class: 'settings-hero', type: 'button', onclick: () => openProfile(false) }, avatarEl(me, 64),
-    h('div', {}, h('div', { class: 'sh-name' }, me.display_name, me.is_owner ? verifiedBadge() : null), h('div', { class: 'sh-un', text: '@' + me.username }), h('div', { class: 'sh-bio', text: me.bio || 'Bio qo‘shilmagan' }))));
+    h('div', {}, h('div', { class: 'sh-name' }, me.display_name, me.is_owner ? verifiedBadge() : null, me.is_premium ? premiumBadge() : null), h('div', { class: 'sh-un', text: '@' + me.username }), h('div', { class: 'sh-bio', text: me.bio || 'Bio qo‘shilmagan' }))));
   body.append(gap(), gTitle('Sozlamalar'),
     lrow('👤', 'Mening akkauntim', 'Ism, bio va rasm', { chev: true, onclick: () => openProfile(true) }),
     lrow('🔔', 'Bildirishnomalar', 'Push, ovoz, ovozsiz suhbatlar', { chev: true, onclick: () => settingsPush('Bildirishnomalar', pageNotif) }),
@@ -474,14 +474,62 @@ function pageMain(body) {
     lrow('⚙️', 'Qo‘shimcha', 'Ko‘rinish o‘lchami, animatsiya, kesh', { chev: true, onclick: () => settingsPush('Qo‘shimcha', pageAdvanced) }),
     lrow('🌐', 'Til', 'O‘zbekcha', { chev: true, onclick: () => settingsPush('Til', pageLang) }));
   body.append(gap(), gTitle('Davra+'));
-  for (const [cls, icon, name, sub] of [
-    ['premium', '★', 'Davra Premium', 'Premium obuna: qo‘shimcha imkoniyatlar'],
-  ]) body.append(h('div', { class: 'lrow soon-row', 'aria-disabled': 'true' }, h('span', { class: 'grad ' + cls, text: icon }), h('span', { class: 'lt' }, h('b', { text: name }), h('small', { text: sub })), h('span', { class: 'soon', text: 'Tez kunda' })));
+  body.append(
+    h('button', { class: 'lrow', type: 'button', onclick: () => settingsPush('Davra Premium', pagePremium) },
+      h('span', { class: 'grad premium', text: '★' }),
+      h('span', { class: 'lt' }, h('b', { text: 'Davra Premium' }), h('small', { text: 'Maxsus belgi, katta fayllar va boshqalar' })),
+      S.me.is_premium ? h('span', { class: 'lv', text: 'Faol' }) : h('span', { class: 'chev', text: '›' })
+    )
+  );
   body.append(h('button', { class: 'lrow', type: 'button', onclick: openNurPage },
     h('span', { class: 'grad coins', text: '✦' }),
     h('span', { class: 'lt' }, h('b', { text: 'Nur' }), h('small', { text: 'Davra valyutasi: kunlik bonus, o‘tkazmalar, tarix' })),
     h('span', { class: 'lv', text: S.nur ? fmtNur(S.nur.balance) + ' ✦' : '' }), h('span', { class: 'chev', text: '›' })));
   body.append(gap(), h('div', { class: 'lrow soon-row', 'aria-disabled': 'true' }, h('span', { class: 'grad gift', text: '🎁' }), h('span', { class: 'lt' }, h('b', { text: 'Sovg‘alar' }), h('small', { text: 'Do‘stlaringizga sovg‘a yuboring' })), h('span', { class: 'soon', text: 'Tez kunda' })), h('div', { style: 'height:16px' }));
+}
+
+// ---- Davra Premium
+function pagePremium(body) {
+  const isPrem = S.me.is_premium;
+  const PRICE = 1000;
+
+  body.append(h('div', { class: 'nur-hero', style: 'background:linear-gradient(160deg, rgba(169,120,255,0.2), transparent)' },
+    h('div', { class: 'nur-star', text: '💎', style: 'background:linear-gradient(135deg,#a978ff,#5ea8ff)' }),
+    h('h2', { style: 'margin-top:12px;' }, isPrem ? 'Siz Premimumsiz!' : 'Davra Premium'),
+    h('div', { class: 'muted', text: isPrem ? 'Obunangiz faol. Barcha imkoniyatlar ochiq.' : 'Imkoniyatlaringizni oshiring' })
+  ));
+
+  body.append(gap(), gTitle('Imkoniyatlar'));
+  const features = [
+    ['💎', 'Maxsus Profil belgisi', 'Ismingiz yonida hashamatli olmos belgisi'],
+    ['📁', 'Katta fayllar', '8 MB o\'rniga 50 MB gacha fayl yuklash'],
+    ['🚀', 'Tezkor yuklash', 'Rasmlar va fayllar tezroq ishlanadi'],
+    ['🎨', 'Kelajakdagi imtiyozlar', 'Barcha yangi funksiyalarga birinchilardan bo\'lib ega bo\'ling']
+  ];
+  for (const [i, t, s] of features) {
+    body.append(h('div', { class: 'lrow static' }, h('span', { class: 'li', text: i }), h('span', { class: 'lt' }, h('b', { text: t }), h('small', { text: s }))));
+  }
+
+  body.append(gap());
+  
+  if (isPrem) {
+    const d = new Date(S.me.premium_until * 1000);
+    body.append(h('div', { class: 'pad muted', style: 'text-align:center;', text: `Amal qilish muddati: ${d.toLocaleDateString()}` }));
+  } else {
+    const btn = h('button', { class: 'btn primary wide', type: 'button', style: 'background:linear-gradient(90deg, #a978ff, #5ea8ff); border:none;' }, `Sotib olish — ${PRICE} ✦`);
+    btn.onclick = async () => {
+      if (!await confirmBox({ title: 'Premium sotib olish', text: `Hisobingizdan ${PRICE} Nur yechiladi. Davom etasizmi?`, ok: 'Sotib olish' })) return;
+      btn.disabled = true;
+      try {
+        const r = await api('/premium/buy', { method: 'POST' });
+        S.me.is_premium = true; S.me.premium_until = r.premium_until;
+        if (S.nur) S.nur.balance = r.new_balance;
+        toast('💎 Tabriklaymiz! Siz endi Premiumsiz!');
+        renderSettings();
+      } catch (e) { toast(e.message); btn.disabled = false; }
+    };
+    body.append(h('div', { class: 'pad' }, btn));
+  }
 }
 
 // ---- bildirishnomalar
@@ -711,7 +759,7 @@ function pageNur(body) {
   if (!NURP.items.length) body.append(h('div', { class: 'pad muted', text: NURP.loaded ? 'Hali amallar yo‘q. Birinchi kunlik bonusni oling!' : 'Yuklanmoqda…' }));
   for (const tx of NURP.items) {
     body.append(h('div', { class: 'lrow static nur-tx' },
-      h('span', { class: 'li', text: { bonus: '🎁', grant: '🎉', sent: '📤', received: '📥' }[tx.kind] || '✦' }),
+      h('span', { class: 'li', text: { bonus: '🎁', grant: '🎉', sent: '📤', received: '📥', premium: '💎' }[tx.kind] || '✦' }),
       h('span', { class: 'lt' }, h('b', { text: nurTitle(tx) }), h('small', { text: dayLabel(tx.created_at) + ', ' + fmtTime(tx.created_at) + (tx.note ? ' · ' + tx.note : '') })),
       h('span', { class: 'nur-amt ' + (tx.amount > 0 ? 'plus' : 'minus'), text: (tx.amount > 0 ? '+' : '−') + fmtNur(Math.abs(tx.amount)) + ' ✦' })));
   }

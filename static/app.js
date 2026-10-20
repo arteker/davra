@@ -153,7 +153,7 @@ function richText(text) {
   return frag;
 }
 
-// ---------------------------------------------------------------- avatar
+// ---------------------------------------------------------------- avatar va belgilar
 const COLORS = ['#e17076', '#e5a550', '#7bc862', '#4fb4c8', '#6c9ce6', '#a881d9', '#ee7aae', '#3fa49a'];
 function avatarEl(entity, size) {
   const name = entity.display_name || entity.title || '?';
@@ -167,10 +167,27 @@ function avatarEl(entity, size) {
   }
   return el;
 }
+
+// Tasdiqlangan (Owner) belgisi
 const verifiedBadge = () => {
   const s = h('span', { class: 'verified-badge', title: 'Davra tomonidan tasdiqlangan', role: 'img', 'aria-label': 'Davra tomonidan tasdiqlangan' });
-  // 8 qirrali "muhr" shakli + gradient + oq belgi (oddiy ptichka emas)
   s.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="url(#vbGrad)" stroke="url(#vbGrad)" stroke-width="1.2" stroke-linejoin="round"><rect x="4.6" y="4.6" width="14.8" height="14.8" rx="2.6"/><rect x="4.6" y="4.6" width="14.8" height="14.8" rx="2.6" transform="rotate(30 12 12)"/><rect x="4.6" y="4.6" width="14.8" height="14.8" rx="2.6" transform="rotate(60 12 12)"/></g><path d="M7.9 12.5l2.9 2.8 5.4-6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  return s;
+};
+
+// Premium belgisi (Qirrali Olmos SVG)
+const premiumBadge = () => {
+  const s = h('span', { class: 'premium-badge', title: 'Davra Premium', role: 'img', 'aria-label': 'Davra Premium' });
+  s.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">
+    <defs>
+      <linearGradient id="premGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#c084fc"/>
+        <stop offset="100%" stop-color="#3b82f6"/>
+      </linearGradient>
+    </defs>
+    <path d="M12 2L22 8L12 22L2 8Z" fill="url(#premGrad)" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M2 8H22 M12 2L7 8L12 22 M12 2L17 8L12 22" stroke="#fff" stroke-width="0.8" fill="none" opacity="0.6"/>
+  </svg>`;
   return s;
 };
 
@@ -321,7 +338,7 @@ function connectWS() {
     S.wsOk = false; clearInterval(pingTimer);
     if (ev.code === 4401) return doLogout(true);
     $('conn').textContent = 'ulanmoqda…';
-    retry++; setTimeout(() => { if (S.token) connectWS(); }, Math.min(8000, 700 * retry));
+    retry++; setTimeout(() => { if (S.token) connectWS(); }, Math.min(2000, 300 * retry));
   };
 }
 function wsSend(obj) { if (S.ws && S.ws.readyState === 1) { S.ws.send(JSON.stringify(obj)); return true; } return false; }
@@ -399,7 +416,9 @@ function chatItemEl(it) {
   const muted = isMuted(key);
   const draft = S.drafts[key];
   const nameRow = h('div', { class: 'nm' }, h('span', { class: 'name-label', text: isRoom ? d.title : d.peer.display_name }),
-    (isRoom ? d.verified : d.peer.is_owner) ? verifiedBadge() : null, isRoom ? h('span', { class: 'room-type', text: d.room_type === 'channel' ? 'kanal' : 'guruh' }) : null,
+    (isRoom ? d.verified : d.peer.is_owner) ? verifiedBadge() : null, 
+    (!isRoom && d.peer.is_premium) ? premiumBadge() : null,
+    isRoom ? h('span', { class: 'room-type', text: d.room_type === 'channel' ? 'kanal' : 'guruh' }) : null,
     muted ? h('span', { class: 'mute-mark', text: '🔕' }) : null);
   const el = h('button', { type: 'button', class: 'item' + (active ? ' active' : ''), onclick: () => openChat(it.kind, d.id) },
     h('div', { style: 'position:relative;flex:none' }, avatarEl(entity), !isRoom && d.peer.online ? h('span', { class: 'dot' }) : null),
@@ -448,7 +467,7 @@ function wireSearch() {
         box.replaceChildren(h('div', { class: 'sec', text: 'Odamlar' }));
         if (!users.length) box.append(h('div', { class: 'emptyl', text: 'Hech kim topilmadi' }));
         for (const u of users) box.append(h('button', { type: 'button', class: 'item', onclick: () => { startChat(u.username); $('search').value = ''; box.hidden = true; } },
-          avatarEl(u), h('div', { class: 'ib' }, h('div', { class: 'nm' }, u.display_name, u.is_owner ? verifiedBadge() : null), h('div', { class: 'pv', text: '@' + u.username }))));
+          avatarEl(u), h('div', { class: 'ib' }, h('div', { class: 'nm' }, u.display_name, u.is_owner ? verifiedBadge() : null, u.is_premium ? premiumBadge() : null), h('div', { class: 'pv', text: '@' + u.username }))));
         box.hidden = false;
       } catch (err) { toast(err.message); }
     }, 250);
@@ -539,7 +558,6 @@ async function loadOlder() {
   S.loadingOlder = false;
 }
 async function loadNewer() {
-  // "uzoq" oynadan eng so'nggi xabarlarga qaytish
   S.detached = false; S.hasNewer = false; S.newWhileUp = 0;
   await loadMessages(); scrollBottom(true); markRead(); updateToBottom();
 }
@@ -564,14 +582,13 @@ function renderHead() {
   const isRoom = S.cur.kind === 'room';
   const entity = isRoom ? d : d.peer;
   $('headAvatar').replaceChildren(avatarEl(entity));
-  $('headName').replaceChildren(h('span', { class: 'name-label', text: isRoom ? d.title : d.peer.display_name }), ...((isRoom ? d.verified : d.peer.is_owner) ? [verifiedBadge()] : []));
+  $('headName').replaceChildren(h('span', { class: 'name-label', text: isRoom ? d.title : d.peer.display_name }), ...((isRoom ? d.verified : d.peer.is_owner) ? [verifiedBadge()] : []), ...((!isRoom && d.peer.is_premium) ? [premiumBadge()] : []));
   updateHeadStatus();
   $('inviteMember').hidden = !(isRoom && d.room_type === 'group' && d.rights && d.rights.add_members);
   const pin = d.pinned;
   $('pinBar').hidden = !pin;
   if (pin) $('pinText').textContent = pin.text || 'Xabar';
   $('pinClose').hidden = !canPin();
-  // banner
   const banner = $('banner'); banner.replaceChildren(); banner.hidden = true;
   if (!isRoom && d.status === 'pending' && !d.i_am_requester) {
     banner.hidden = false;
@@ -634,7 +651,9 @@ function buildMsg(m, showName) {
   const el = h('div', { class: 'msg ' + (mine ? 'out' : 'in') + (m.failed ? ' fail' : '') + (m.deleted ? ' deleted' : ''), 'data-id': m.id });
   if (showName && isRoom && (!mine || (curData() || {}).room_type === 'channel')) {
     el.append(h('div', { class: 'sender', style: `color:${COLORS[m.sender_id % COLORS.length]}` },
-      h('span', { text: m.sender_name || 'Foydalanuvchi' }), m.sender_is_owner ? verifiedBadge() : null,
+      h('span', { text: m.sender_name || 'Foydalanuvchi' }), 
+      m.sender_is_owner ? verifiedBadge() : null,
+      m.sender_is_premium ? premiumBadge() : null,
       m.sender_tag ? h('span', { class: 'tag-chip', text: m.sender_tag }) : null));
   }
   if (m.fwd && !m.deleted) el.append(h('div', { class: 'fwd', text: '↪ Yo‘naltirilgan: ' + m.fwd }));
@@ -882,7 +901,7 @@ function submitMessage(text, attachment) {
     id: 't' + (++S.tmp), temp: true, pending: true, sender_id: me.id, sender_name: me.display_name, text: text || '',
     created_at: Date.now() / 1000, attachment: attachment || null, reactions: [], read: false, edited: false, deleted: false,
     reply_to: S.reply ? S.reply.id : null, reply: S.reply ? { id: S.reply.id, sender_name: S.reply.name, text: S.reply.text } : null,
-    _chat: { kind: S.cur.kind, id: S.cur.id },
+    _chat: { kind: S.cur.kind, id: S.cur.id }, sender_is_owner: me.is_owner, sender_is_premium: me.is_premium
   };
   void d;
   S.msgs.push(m); cancelReply(); renderMsgs(); scrollBottom(true);
@@ -1121,7 +1140,7 @@ function incoming(kind, id, m, tempId, listItem) {
 function onProfileUpdate(u) {
   if (u.id === S.me.id) { S.me = Object.assign(S.me, u); if (typeof refreshMenuProfile === 'function') refreshMenuProfile(); }
   for (const c of S.chats) if (c.peer.id === u.id) c.peer = u;
-  for (const k of Object.keys(S.members)) { const mm = S.members[k].find(x => x.id === u.id); if (mm) Object.assign(mm, { display_name: u.display_name, avatar_url: u.avatar_url }); }
+  for (const k of Object.keys(S.members)) { const mm = S.members[k].find(x => x.id === u.id); if (mm) Object.assign(mm, { display_name: u.display_name, avatar_url: u.avatar_url, is_premium: u.is_premium }); }
   for (const m of S.msgs) if (m.sender_id === u.id && m.sender_name !== undefined) m.sender_name = u.display_name;
   if (S.cur) { renderHead(); renderMsgs(true); }
   renderList();
@@ -1186,7 +1205,6 @@ async function pushDisable() {
 }
 async function pushDropDevice() { if ('serviceWorker' in navigator && 'PushManager' in window) await pushDisable(); }
 async function pushResync() {
-  // Kirgan akkauntga shu qurilma obunasini qayta bog'laydi (agar ruxsat berilgan bo'lsa)
   try {
     if ((await pushStatus()) !== 'on') return;
     const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription(); const j = sub.toJSON();

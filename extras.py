@@ -224,16 +224,27 @@ def _process_image(data):
 async def upload(request: Request, authorization: str = Header(None)):
     async with core.SessionLocal() as db:
         user = await core.require_user(db, authorization)
+        
     if core.limited(f"upload:{user.id}", 40, 3600):
         raise HTTPException(429, "Soatiga ko'pi bilan 40 ta fayl yuborish mumkin")
+        
+    # YANGI MANTIQ: Premiumlarga 50MB, oddiy odamlarga 8MB
+    current_max_upload = (50 * 1024 * 1024) if user.is_premium else MAX_UPLOAD 
+    
     declared = request.headers.get("content-length")
-    if declared and (not declared.isdigit() or int(declared) > MAX_UPLOAD):
-        raise HTTPException(413, f"Fayl {MAX_UPLOAD // 1024 // 1024} MB dan kichik bo'lishi kerak")
+    if declared and (not declared.isdigit() or int(declared) > current_max_upload):
+        raise HTTPException(413, f"Fayl {current_max_upload // 1024 // 1024} MB dan kichik bo'lishi kerak")
+        
     chunks = bytearray()
     async for chunk in request.stream():
         chunks.extend(chunk)
-        if len(chunks) > MAX_UPLOAD:
-            raise HTTPException(413, f"Fayl {MAX_UPLOAD // 1024 // 1024} MB dan kichik bo'lishi kerak")
+        if len(chunks) > current_max_upload:
+            raise HTTPException(413, f"Fayl {current_max_upload // 1024 // 1024} MB dan kichik bo'lishi kerak")
+    chunks = bytearray()
+    async for chunk in request.stream():
+        chunks.extend(chunk)
+        if len(chunks) > current_max_upload:
+            raise HTTPException(413, f"Fayl {current_max_upload // 1024 // 1024} MB dan kichik bo'lishi kerak")
     if not chunks:
         raise HTTPException(400, "Fayl tanlanmadi")
     data = bytes(chunks)

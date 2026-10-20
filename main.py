@@ -69,8 +69,11 @@ class User(Base):
     last_seen = Column(Float, nullable=False)
     avatar_url = Column(String(255), nullable=True)
     is_owner = Column(Boolean, nullable=False, default=False)
-    hide_seen = Column(Boolean, nullable=False, default=False, server_default=false())       # "oxirgi marta ko'rilgan"ni yashirish
-    allow_requests = Column(Boolean, nullable=False, default=True, server_default=true())    # notanishlar yozishi mumkinmi
+    hide_seen = Column(Boolean, nullable=False, default=False, server_default=false())
+    allow_requests = Column(Boolean, nullable=False, default=True, server_default=true())
+    # YANGI QO'SHILGAN QATORLAR:
+    is_premium = Column(Boolean, nullable=False, default=False, server_default=false())
+    premium_until = Column(Float, nullable=True) # Premium tugash vaqti (timestamp)
 
 
 class Session(Base):
@@ -441,12 +444,14 @@ hub = Hub()
 
 def ser_user(u):
     hidden = bool(u.hide_seen)
+    is_prem = bool(u.is_premium and u.premium_until and u.premium_until > time.time())
     return {"id": u.id, "username": u.username, "display_name": u.display_name,
             "bio": u.bio, "avatar_url": u.avatar_url, "is_owner": bool(u.is_owner),
             "online": False if hidden else hub.online(u.id),
             "last_seen": None if hidden else u.last_seen,
-            "hidden": hidden, "hide_seen": hidden, "allow_requests": bool(u.allow_requests)}
-
+            "hidden": hidden, "hide_seen": hidden, "allow_requests": bool(u.allow_requests),
+            # YANGI QO'SHILGAN QATOR:
+            "is_premium": is_prem}
 
 def ser_msg(m):
     deleted = bool(m.deleted)
@@ -914,6 +919,7 @@ async def ws_endpoint(ws: WebSocket):
 import features  # noqa: E402,F401
 import extras  # noqa: E402,F401
 import nur  # noqa: E402,F401   (Nur valyutasi: hamyon, bonus, o'tkazma)
+import premium    # noqa (YANGI)
 
 # Frontend (PWA) fayllari — eng oxirida ulanadi
 app.mount("/", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static"), html=True), name="static")

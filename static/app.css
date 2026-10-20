@@ -428,3 +428,23 @@ button.lrow:hover,label.lrow:hover{background:var(--hover)}
 .nur-amt.plus{color:var(--ok)}.nur-amt.minus{color:var(--danger)}
 .nur-send .form-stack{gap:10px}
 .nur-chips{display:flex;gap:8px;flex-wrap:wrap}
+/* Premium Badge (Olmos belgisi) */
+.premium-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3em;
+  height: 1.3em;
+  min-width: 15px;
+  min-height: 15px;
+  margin-left: .2em;
+  flex: none;
+  vertical-align: -.2em;
+  filter: drop-shadow(0 1px 5px rgba(169,120,255,.6));
+  animation: premGlow 3s ease-in-out infinite;
+}
+.premium-badge svg { width: 100%; height: 100%; display: block; }
+@keyframes premGlow {
+  0%, 100% { filter: drop-shadow(0 1px 3px rgba(169,120,255,.4)); }
+  50% { filter: drop-shadow(0 1px 8px rgba(169,120,255,.9)); }
+}

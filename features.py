@@ -246,8 +246,16 @@ async def _users_bulk(db, ids):
     if not ids:
         return {}
     rows = (await db.execute(select(core.User).where(core.User.id.in_(ids)))).scalars().all()
+    
+    # NURNING BALANSINI HAM YUKLAYMIZ (Boshqalarda 3D avatar ko'rinishi uchun)
+    import nur as nur_module
+    nur_rows = (await db.execute(select(nur_module.NurAccount.user_id, nur_module.NurAccount.balance).where(nur_module.NurAccount.user_id.in_(ids)))).all()
+    balances = {uid: bal for uid, bal in nur_rows}
+    
+    for u in rows:
+        u.nur_balance = balances.get(u.id, 0)
+        
     return {user.id: user for user in rows}
-
 
 async def _reply_previews(db, model, ids):
     """Javob berilgan xabarlarning qisqa ko'rinishi (bitta-ikkita so'rov bilan)."""

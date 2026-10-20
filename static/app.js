@@ -5,7 +5,6 @@
    Menyu, sozlamalar va oynalar panels.js da.
    ========================================================================== */
 
-// ---------------------------------------------------------------- yordamchilar
 const $ = id => document.getElementById(id);
 const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
 function h(tag, attrs, ...kids) {
@@ -26,9 +25,8 @@ function h(tag, attrs, ...kids) {
   return el;
 }
 const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } };
-const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* xotira yopiq bo'lishi mumkin */ } };
-const lsDel = k => { try { localStorage.removeItem(k); } catch { /* */ } };
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { } };
+const lsDel = k => { try { localStorage.removeItem(k); } catch { } };
 const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr'];
 const REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🔥', '👏', '✅'];
 const EMOJIS = ('😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🙂 😉 😍 🥰 😘 😋 😎 🤩 🥳 😏 😒 😔 😢 😭 😤 😡 🤯 😱 🤔 🤗 🤭 😴 🙄 😬 🤝 👍 👎 👏 🙏 💪 👌 ✌️ 🤞 👋 ❤️ 🧡 💛 💚 💙 💜 🖤 💔 🔥 ✨ 🎉 🎁 ✅ ❌ ⭐ 💯 🌹 ☀️ 🌙 ☕ 🍕 🍎 ⚽ 🚀').split(' ');
@@ -90,7 +88,7 @@ async function loadSettings() {
   try {
     const r = await api('/settings');
     if (r.data && Object.keys(r.data).length) { S.settings = mergeSettings(r.data); lsSet('settings:' + S.me.id, S.settings); applySettings(); }
-  } catch { /* oflayn — kesh ishlatiladi */ }
+  } catch { }
 }
 
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
@@ -149,7 +147,6 @@ function richText(text) {
   return frag;
 }
 
-// ---------------------------------------------------------------- AVATAR (3D Kosmik Effekt)
 // ---------------------------------------------------------------- AVATAR (Super 3D Kosmik Tizim)
 const COLORS = ['#e17076', '#e5a550', '#7bc862', '#4fb4c8', '#6c9ce6', '#a881d9', '#ee7aae', '#3fa49a'];
 
@@ -159,11 +156,10 @@ function avatarEl(entity, size) {
   const id = entity.id || 0;
   
   const username = (entity.username || '').toLowerCase().replace(/^@/, '');
-  // Owner ekanligini avtomatik aniqlash
+  // Owner (Ega) ekanligini aniqlash
   const isOwner = !!entity.is_owner || username === 'owner1'; 
   const isPrem = !!entity.is_premium || isOwner;
   
-  // Nur balansini aniq olish
   let nurBal = 0;
   if (S.me && (S.me.id === id || username === S.me.username)) {
     nurBal = S.nur ? S.nur.balance : (S.me.nur_balance || 0);
@@ -180,9 +176,11 @@ function avatarEl(entity, size) {
     else tierClass = 'tier-1';
   }
 
+  // MUAMMONING YECHIMI: Agar o'lcham berilmasa, standart 48px bo'ladi.
+  const sz = size || 48;
   const wrap = h('div', { 
     class: `avatar-3d-wrap ${tierClass}`, 
-    style: size ? `width:${size}px;height:${size}px;` : '' 
+    style: `width:${sz}px;height:${sz}px;` 
   });
 
   if (tierClass) {
@@ -196,7 +194,7 @@ function avatarEl(entity, size) {
     }
   }
 
-  const fontSize = size ? Math.max(12, Math.round(size * 0.38)) : 18;
+  const fontSize = Math.round(sz * 0.38);
   const el = h('div', { 
     class: 'avatar-core', 
     style: `background-color:${COLORS[Math.abs(id) % COLORS.length]}; font-size:${fontSize}px;` 
@@ -223,12 +221,7 @@ const verifiedBadge = () => {
 const premiumBadge = () => {
   const s = h('span', { class: 'premium-badge', title: 'Davra Premium', role: 'img', 'aria-label': 'Davra Premium' });
   s.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">
-    <defs>
-      <linearGradient id="premGrad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#c084fc"/>
-        <stop offset="100%" stop-color="#3b82f6"/>
-      </linearGradient>
-    </defs>
+    <defs><linearGradient id="premGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#3b82f6"/></linearGradient></defs>
     <path d="M12 2L22 8L12 22L2 8Z" fill="url(#premGrad)" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>
     <path d="M2 8H22 M12 2L7 8L12 22 M12 2L17 8L12 22" stroke="#fff" stroke-width="0.8" fill="none" opacity="0.6"/>
   </svg>`;
@@ -245,6 +238,7 @@ document.addEventListener('pointerdown', e => {
   if (!e.target.closest('.popup') && !e.target.closest('#attachBtn') && !e.target.closest('#chatMoreBtn')) closePopups();
 }, true);
 window.addEventListener('resize', closePopups);
+
 function showPopup(items, x, y, header) {
   const menu = $('ctxMenu'); menu.replaceChildren();
   if (header) menu.append(header);
@@ -266,7 +260,7 @@ async function api(path, opts = {}) {
   let res;
   try { res = await fetch('/api' + path, { method: opts.method || 'GET', headers, body }); }
   catch { throw new Error('Internet bilan aloqa yo‘q'); }
-  let data = null; try { data = await res.json(); } catch { /* bo'sh javob */ }
+  let data = null; try { data = await res.json(); } catch { }
   if (res.status === 401 && S.token && !opts.noAuthRedirect) { doLogout(true); throw new Error('Qaytadan kiring'); }
   if (!res.ok) {
     const d = data && data.detail;
@@ -298,10 +292,10 @@ async function submitAuth(e) {
 }
 async function doLogout(silent) {
   if (!silent && S.token) {
-    try { await pushDropDevice(); } catch { /* */ }
-    try { await api('/logout', { method: 'POST', noAuthRedirect: true }); } catch { /* */ }
+    try { await pushDropDevice(); } catch { }
+    try { await api('/logout', { method: 'POST', noAuthRedirect: true }); } catch { }
   }
-  if (S.ws) { S.ws.onclose = null; try { S.ws.close(); } catch { /* */ } S.ws = null; }
+  if (S.ws) { S.ws.onclose = null; try { S.ws.close(); } catch { } S.ws = null; }
   clearInterval(pingTimer);
   lsDel('token');
   Object.assign(S, { token: null, me: null, chats: [], rooms: [], invites: [], cur: null, msgs: [], members: {}, reads: {}, reply: null, attach: null, nur: null });
@@ -311,7 +305,7 @@ async function doLogout(silent) {
   showAuth();
   if (silent) toast('Seans tugadi. Qaytadan kiring');
 }
-function closeAllDialogs() { $$('dialog[open]').forEach(d => { try { d.close(); } catch { /* */ } }); }
+function closeAllDialogs() { $$('dialog[open]').forEach(d => { try { d.close(); } catch { } }); }
 
 function boot() {
   applyTheme(lsGet('theme', 'dark'));
@@ -349,7 +343,7 @@ async function startApp() {
 }
 { const jp = new URLSearchParams(location.search).get('join'); if (jp) { lsSet('joinCode', jp); history.replaceState(null, '', '/'); } }
 async function loadNur() {
-  try { S.nur = await api('/nur'); } catch { /* hamyon keyinroq yuklanadi */ }
+  try { S.nur = await api('/nur'); } catch { }
   return S.nur;
 }
 async function loadAll() {
@@ -360,7 +354,6 @@ async function loadAll() {
   renderList();
 }
 
-// ---------------------------------------------------------------- WebSocket
 let pingTimer = null, retry = 0;
 function connectWS() {
   if (!S.token) return;
@@ -374,20 +367,16 @@ function connectWS() {
     if (wasDown) resync();
   };
   ws.onmessage = e => { let d; try { d = JSON.parse(e.data); } catch { return; } try { onWs(d); } catch (err) { console.error(err); } };
-    ws.onclose = ev => {
+  ws.onclose = ev => {
     S.wsOk = false; clearInterval(pingTimer);
     if (ev.code === 4401) return doLogout(true);
     $('conn').textContent = 'ulanmoqda…';
-    
-    // Vercel/Render uzib qo'ysa, darhol qayta ulanish
-    retry++; 
-    setTimeout(() => { if (S.token) connectWS(); }, 100); // 100 millisekund
+    retry++; setTimeout(() => { if (S.token) connectWS(); }, 100); // 100ms da qayta ulanadi
   };
 }
 function wsSend(obj) { if (S.ws && S.ws.readyState === 1) { S.ws.send(JSON.stringify(obj)); return true; } return false; }
 function sendVisibility() { wsSend({ type: 'visibility', visible: document.visibilityState === 'visible' }); }
 
-// Xatolikni to'g'rilash (F5 talab qilmaslik uchun)
 document.addEventListener('visibilitychange', () => { 
   sendVisibility(); 
   if (document.visibilityState === 'visible') { 
@@ -399,7 +388,7 @@ window.addEventListener('online', () => { if (S.token && (!S.ws || S.ws.readySta
 
 async function resync() {
   await loadAll();
-  if (S.cur && !S.detached) { try { await loadMessages(); } catch { /* */ } }
+  if (S.cur && !S.detached) { try { await loadMessages(); } catch { } }
 }
 
 const keyOf = (kind, id) => kind === 'room' ? 'r:' + id : String(id);
@@ -612,7 +601,7 @@ async function loadNewer() {
   await loadMessages(); scrollBottom(true); markRead(); updateToBottom();
 }
 async function loadRoomReads(id) {
-  try { S.reads[id] = await api('/rooms/' + id + '/reads'); if (S.cur && S.cur.kind === 'room' && S.cur.id === id) renderMsgs(); } catch { /* */ }
+  try { S.reads[id] = await api('/rooms/' + id + '/reads'); if (S.cur && S.cur.kind === 'room' && S.cur.id === id) renderMsgs(); } catch { }
 }
 function canWrite() {
   const d = curData(); if (!d) return false;
@@ -631,7 +620,7 @@ function renderHead() {
   if (!d) { $('chatView').hidden = true; $('empty').hidden = false; $('app').classList.remove('chat-open'); return; }
   const isRoom = S.cur.kind === 'room';
   const entity = isRoom ? d : d.peer;
-  $('headAvatar').replaceChildren(avatarEl(entity));
+  $('headAvatar').replaceChildren(avatarEl(entity, 42));
   $('headName').replaceChildren(h('span', { class: 'name-label', text: isRoom ? d.title : d.peer.display_name }), ...((isRoom ? d.verified : d.peer.is_owner) ? [verifiedBadge()] : []), ...((!isRoom && d.peer.is_premium) ? [premiumBadge()] : []));
   updateHeadStatus();
   $('inviteMember').hidden = !(isRoom && d.room_type === 'group' && d.rights && d.rights.add_members);
@@ -986,7 +975,7 @@ function uploadFile(blob, { kind, name, duration, onProgress }) {
     if (duration) xhr.setRequestHeader('X-Duration', String(duration));
     xhr.upload.onprogress = e => { if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total); };
     xhr.onload = () => {
-      let data = null; try { data = JSON.parse(xhr.responseText); } catch { /* */ }
+      let data = null; try { data = JSON.parse(xhr.responseText); } catch { }
       if (xhr.status >= 200 && xhr.status < 300) resolve(data);
       else reject(new Error((data && typeof data.detail === 'string' && data.detail) || 'Yuklab bo‘lmadi (' + xhr.status + ')'));
     };
@@ -1033,7 +1022,7 @@ async function startRecording() {
   $('composer').hidden = true; $('recBar').hidden = false; $('recTime').textContent = '0:00';
   REC.timer = setInterval(() => {
     const s = (Date.now() - REC.start) / 1000; $('recTime').textContent = fmtDur(s);
-    if (s >= (S.me.is_premium ? 600 : 120)) stopRecording(false); // Premiumlar uchun 10 daqiqa
+    if (s >= (S.me.is_premium ? 600 : 120)) stopRecording(false);
   }, 250);
 }
 function stopRecording(cancel) {
@@ -1051,7 +1040,7 @@ async function finishRecording() {
   if (dur < 0.7) return toast('Ovozli xabar juda qisqa');
   let blob = new Blob(REC.chunks, { type: (rec.mimeType || 'audio/webm').split(';')[0] });
   toast('Tayyorlanmoqda…', 1500);
-  try { blob = await toWav(blob); } catch { /* asl format ishlatiladi */ }
+  try { blob = await toWav(blob); } catch { }
   if (blob.size > 15 * 1024 * 1024) return toast('Ovozli xabar juda katta');
   try {
     const meta = await uploadFile(blob, { kind: 'voice', duration: dur.toFixed(1) });
@@ -1124,7 +1113,7 @@ function onWs(d) {
       if (S.nur) S.nur.balance = d.balance; else loadNur();
       if (d.tx && d.tx.kind === 'grant') toast('✦ Davra sizga ' + d.tx.amount + ' Nur sovg‘a qildi', 4200);
       if (typeof onNurUpdate === 'function') onNurUpdate();
-      renderList(); // Avatar yangilanishi uchun
+      renderList();
       break;
     case 'gift_received': {
       const g = d.gift;
@@ -1211,7 +1200,7 @@ function beep() {
       g.gain.setValueAtTime(0.0001, t + i * .12); g.gain.exponentialRampToValueAtTime(0.12, t + i * .12 + .02); g.gain.exponentialRampToValueAtTime(0.0001, t + i * .12 + .2);
       o.start(t + i * .12); o.stop(t + i * .12 + .22);
     });
-  } catch { /* ovoz ruxsat etilmagan */ }
+  } catch { }
 }
 function notify(kind, id, m) {
   const s = S.settings; const key = keyOf(kind, id);
@@ -1247,7 +1236,7 @@ async function pushEnable() {
 }
 async function pushDisable() {
   const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription();
-  if (sub) { try { await api('/push/unsubscribe', { method: 'POST', body: { endpoint: sub.endpoint } }); } catch { /* */ } await sub.unsubscribe(); }
+  if (sub) { try { await api('/push/unsubscribe', { method: 'POST', body: { endpoint: sub.endpoint } }); } catch { } await sub.unsubscribe(); }
 }
 async function pushDropDevice() { if ('serviceWorker' in navigator && 'PushManager' in window) await pushDisable(); }
 async function pushResync() {
@@ -1255,7 +1244,7 @@ async function pushResync() {
     if ((await pushStatus()) !== 'on') return;
     const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription(); const j = sub.toJSON();
     await api('/push/subscribe', { method: 'POST', body: { endpoint: j.endpoint, keys: j.keys } });
-  } catch { /* */ }
+  } catch { }
 }
 
 function wireUi() {

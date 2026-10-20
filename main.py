@@ -913,6 +913,7 @@ async def ws_endpoint(ws: WebSocket):
 # Qo'shimcha: profillar, guruhlar, kanallar (features) va fayl/push/sozlamalar (extras).
 import features  # noqa: E402,F401
 import extras  # noqa: E402,F401
+import nur  # noqa: E402,F401   (Nur valyutasi: hamyon, bonus, o'tkazma)
 
 # Frontend (PWA) fayllari — eng oxirida ulanadi
 app.mount("/", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static"), html=True), name="static")

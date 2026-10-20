@@ -476,8 +476,11 @@ function pageMain(body) {
   body.append(gap(), gTitle('Davra+'));
   for (const [cls, icon, name, sub] of [
     ['premium', '★', 'Davra Premium', 'Premium obuna: qo‘shimcha imkoniyatlar'],
-    ['coins', '✦', 'Nur', 'Davra valyutasi (Telegram Stars kabi)'],
   ]) body.append(h('div', { class: 'lrow soon-row', 'aria-disabled': 'true' }, h('span', { class: 'grad ' + cls, text: icon }), h('span', { class: 'lt' }, h('b', { text: name }), h('small', { text: sub })), h('span', { class: 'soon', text: 'Tez kunda' })));
+  body.append(h('button', { class: 'lrow', type: 'button', onclick: openNurPage },
+    h('span', { class: 'grad coins', text: '✦' }),
+    h('span', { class: 'lt' }, h('b', { text: 'Nur' }), h('small', { text: 'Davra valyutasi: kunlik bonus, o‘tkazmalar, tarix' })),
+    h('span', { class: 'lv', text: S.nur ? fmtNur(S.nur.balance) + ' ✦' : '' }), h('span', { class: 'chev', text: '›' })));
   body.append(gap(), h('div', { class: 'lrow soon-row', 'aria-disabled': 'true' }, h('span', { class: 'grad gift', text: '🎁' }), h('span', { class: 'lt' }, h('b', { text: 'Sovg‘alar' }), h('small', { text: 'Do‘stlaringizga sovg‘a yuboring' })), h('span', { class: 'soon', text: 'Tez kunda' })), h('div', { style: 'height:16px' }));
 }
 
@@ -652,6 +655,99 @@ function pageLang(body) {
   body.append(h('div', { class: 'lrow static' }, h('span', { class: 'li', text: '🇺🇿' }), h('span', { class: 'lt' }, h('b', { text: 'O‘zbekcha' })), h('span', { class: 'lv', text: '✓' })));
   for (const [f, n] of [['🇷🇺', 'Русский'], ['🇬🇧', 'English'], ['🇹🇷', 'Türkçe']])
     body.append(h('div', { class: 'lrow soon-row', 'aria-disabled': 'true' }, h('span', { class: 'li', text: f }), h('span', { class: 'lt' }, h('b', { text: n })), h('span', { class: 'soon', text: 'Tez kunda' })));
+}
+
+// ---------------------------------------------------------------- NUR (hamyon, bonus, o'tkazma)
+const NURP = { items: [], more: false, loading: false, loaded: false };
+const fmtNur = n => { n = Number(n) || 0; return (n < 0 ? '−' : '') + String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); };
+const nurPageOpen = () => $('settingsDialog').open && ST.stack.length > 0 && ST.stack[ST.stack.length - 1].build === pageNur;
+function openNurPage() {
+  NURP.items = (S.nur && S.nur.history) || []; NURP.more = !!(S.nur && S.nur.has_more); NURP.loaded = false;
+  ST.stack.push({ title: 'Nur', build: pageNur, keepScroll: true }); renderSettings(); nurReload();
+}
+async function nurReload() {
+  const r = await loadNur();
+  if (!r) return toast('Hamyonni yuklab bo‘lmadi');
+  NURP.items = r.history || []; NURP.more = !!r.has_more; NURP.loaded = true;
+  if (nurPageOpen()) renderSettings();
+}
+function onNurUpdate() { if (nurPageOpen()) nurReload(); }
+async function nurMore() {
+  if (NURP.loading || !NURP.items.length) return;
+  NURP.loading = true;
+  try {
+    const r = await api('/nur/history?before=' + NURP.items[NURP.items.length - 1].id);
+    NURP.items = NURP.items.concat(r.history); NURP.more = r.has_more;
+    if (nurPageOpen()) renderSettings();
+  } catch (e) { toast(e.message); }
+  NURP.loading = false;
+}
+async function nurClaim(btn) {
+  btn.disabled = true;
+  try { const r = await api('/nur/bonus', { method: 'POST' }); toast('✦ +' + r.bonus + ' Nur: kunlik bonus'); await nurReload(); }
+  catch (e) { toast(e.message); btn.disabled = false; nurReload(); }
+}
+function nurTitle(tx) {
+  const who = tx.peer ? tx.peer.display_name : 'Foydalanuvchi';
+  return { bonus: 'Kunlik bonus', grant: 'Davra sovg‘asi', sent: 'Yuborildi: ' + who, received: 'Olindi: ' + who }[tx.kind] || 'Amal';
+}
+function nurWait(ts) {
+  const s = Math.max(0, Math.ceil(ts - Date.now() / 1000)), hh = Math.floor(s / 3600), mm = Math.floor((s % 3600) / 60);
+  return hh ? hh + ' soat ' + mm + ' daqiqa' : Math.max(1, mm) + ' daqiqa';
+}
+function pageNur(body) {
+  const n = S.nur;
+  body.append(h('div', { class: 'nur-hero' }, h('div', { class: 'nur-star', text: '✦' }),
+    h('div', { class: 'nur-balance', text: n ? fmtNur(n.balance) : '…' }), h('div', { class: 'muted', text: 'Nur balansingiz' })));
+  if (!n) return;
+  const claim = h('button', { class: 'btn primary wide', type: 'button' }, n.can_claim ? 'Kunlik bonusni olish  +' + n.next_bonus + ' ✦' : 'Bugungi bonus olingan');
+  claim.disabled = !n.can_claim;
+  if (n.can_claim) claim.onclick = () => nurClaim(claim);
+  const hint = n.can_claim
+    ? (n.streak ? '🔥 ' + n.streak + ' kun ketma-ket. Bugun olsangiz seriya davom etadi.' : 'Har kuni kirib bonus oling: ketma-ket kunlar uchun bonus oshib boradi (20 ✦ gacha).')
+    : '🔥 ' + n.streak + ' kun ketma-ket · keyingi bonus (+' + n.next_bonus + ' ✦) ' + nurWait(n.next_claim_at) + 'dan keyin';
+  body.append(h('div', { class: 'pad nur-claim' }, claim, h('div', { class: 'muted', text: hint })),
+    gap(), lrow('💬', 'Do‘stga yuborish', 'Suhbatni oching → ⋮ → «Nur yuborish»'), gap(), gTitle('Tarix'));
+  if (!NURP.items.length) body.append(h('div', { class: 'pad muted', text: NURP.loaded ? 'Hali amallar yo‘q. Birinchi kunlik bonusni oling!' : 'Yuklanmoqda…' }));
+  for (const tx of NURP.items) {
+    body.append(h('div', { class: 'lrow static nur-tx' },
+      h('span', { class: 'li', text: { bonus: '🎁', grant: '🎉', sent: '📤', received: '📥' }[tx.kind] || '✦' }),
+      h('span', { class: 'lt' }, h('b', { text: nurTitle(tx) }), h('small', { text: dayLabel(tx.created_at) + ', ' + fmtTime(tx.created_at) + (tx.note ? ' · ' + tx.note : '') })),
+      h('span', { class: 'nur-amt ' + (tx.amount > 0 ? 'plus' : 'minus'), text: (tx.amount > 0 ? '+' : '−') + fmtNur(Math.abs(tx.amount)) + ' ✦' })));
+  }
+  if (NURP.more) body.append(lrow('⌄', 'Yana ko‘rsatish', null, { onclick: nurMore }));
+  body.append(h('div', { style: 'height:16px' }));
+}
+function openSendNur(chat) {
+  const peer = chat.peer, max = (S.nur && S.nur.max_transfer) || 5000;
+  const bal = h('b', { text: S.nur ? fmtNur(S.nur.balance) + ' ✦' : '…' });
+  const amount = h('input', { type: 'number', inputmode: 'numeric', min: 1, max, step: 1, placeholder: 'Miqdor', 'aria-label': 'Nur miqdori' });
+  const note = h('input', { maxlength: 60, placeholder: 'Izoh (ixtiyoriy)', 'aria-label': 'Izoh' });
+  const err = h('div', { class: 'err' });
+  const send = h('button', { class: 'btn primary', type: 'submit' }, 'Yuborish');
+  const chips = h('div', { class: 'nur-chips' }, [10, 50, 100, 500].map(v => h('button', { type: 'button', class: 'btn small', onclick: () => { amount.value = v; amount.focus(); } }, v + ' ✦')));
+  const form = h('form', { class: 'pad nur-send' }, h('h2', { text: '✦ Nur yuborish' }),
+    h('p', { class: 'muted' }, peer.display_name + ' ga yuboriladi. Sizda: ', bal),
+    h('div', { class: 'form-stack', style: 'margin-top:12px' }, amount, chips, note, err),
+    h('div', { class: 'confirm-actions' }, h('button', { class: 'btn ghost', type: 'button', onclick: () => dlg.close() }, 'Bekor qilish'), send));
+  const dlg = h('dialog', { class: 'sheet narrow' }, form);
+  form.addEventListener('submit', async e => {
+    e.preventDefault(); err.textContent = '';
+    const v = parseInt(amount.value, 10);
+    if (!Number.isInteger(v) || v < 1) { err.textContent = 'Miqdorni kiriting'; return; }
+    if (v > max) { err.textContent = 'Bir o‘tkazmada ko‘pi bilan ' + fmtNur(max) + ' ✦'; return; }
+    if (S.nur && v > S.nur.balance) { err.textContent = 'Nur yetarli emas'; return; }
+    send.disabled = true;
+    try {
+      const r = await api('/nur/transfer', { method: 'POST', body: { chat_id: chat.id, amount: v, note: note.value } });
+      if (S.nur) S.nur.balance = r.balance;
+      toast('✦ ' + fmtNur(v) + ' Nur yuborildi'); dlg.close();
+    } catch (ex) { err.textContent = ex.message; send.disabled = false; }
+  });
+  dlg.addEventListener('close', () => dlg.remove());
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+  document.body.append(dlg); dlg.showModal(); amount.focus();
+  loadNur().then(n => { if (n) bal.textContent = fmtNur(n.balance) + ' ✦'; });
 }
 
 // ---------------------------------------------------------------- ulash

@@ -43,6 +43,7 @@ const S = {
   reply: null, attach: null, forwardingMsg: null,
   filter: 'all', settings: null, ws: null, wsOk: false, newWhileUp: 0,
   typing: {}, tmp: 0, drafts: lsGet('drafts', {}),
+  nur: null,                 // Nur hamyoni: {balance, can_claim, streak, next_bonus, history, ...}
 };
 
 const DEFAULTS = () => ({
@@ -245,7 +246,7 @@ async function doLogout(silent) {
   if (S.ws) { S.ws.onclose = null; try { S.ws.close(); } catch { /* */ } S.ws = null; }
   clearInterval(pingTimer);
   lsDel('token');
-  Object.assign(S, { token: null, me: null, chats: [], rooms: [], invites: [], cur: null, msgs: [], members: {}, reads: {}, reply: null, attach: null });
+  Object.assign(S, { token: null, me: null, chats: [], rooms: [], invites: [], cur: null, msgs: [], members: {}, reads: {}, reply: null, attach: null, nur: null });
   $('chatView').hidden = true; $('empty').hidden = false; $('app').classList.remove('chat-open');
   closeAllDialogs();
   document.title = 'Davra'; if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => { });
@@ -279,6 +280,7 @@ async function startApp() {
   await loadAll();
   connectWS();
   pushResync();
+  loadNur();
   const param = new URLSearchParams(location.search).get('chat');
   if (param) { openByKey(param); history.replaceState(null, '', '/'); }
   const jc = lsGet('joinCode');
@@ -289,6 +291,10 @@ async function startApp() {
   }
 }
 { const jp = new URLSearchParams(location.search).get('join'); if (jp) { lsSet('joinCode', jp); history.replaceState(null, '', '/'); } }
+async function loadNur() {
+  try { S.nur = await api('/nur'); } catch { /* hamyon keyinroq yuklanadi */ }
+  return S.nur;
+}
 async function loadAll() {
   try {
     const [chats, rooms, invites] = await Promise.all([api('/chats'), api('/rooms'), api('/invites')]);
@@ -312,15 +318,12 @@ function connectWS() {
   };
   ws.onmessage = e => { let d; try { d = JSON.parse(e.data); } catch { return; } try { onWs(d); } catch (err) { console.error(err); } };
   ws.onclose = ev => {
-  S.wsOk = false; clearInterval(pingTimer);
-  if (ev.code === 4401) return doLogout(true);
-   $('conn').textContent = 'ulanmoqda…';
-    retry++;
-    // Vercel tez uzadi, shuning uchun tezroq qayta ulanamiz (maks 2 soniya)
-    setTimeout(() => { if (S.token) connectWS(); }, Math.min(2000, 300 * retry));
+    S.wsOk = false; clearInterval(pingTimer);
+    if (ev.code === 4401) return doLogout(true);
+    $('conn').textContent = 'ulanmoqda…';
+    retry++; setTimeout(() => { if (S.token) connectWS(); }, Math.min(8000, 700 * retry));
   };
-  };
-
+}
 function wsSend(obj) { if (S.ws && S.ws.readyState === 1) { S.ws.send(JSON.stringify(obj)); return true; } return false; }
 function sendVisibility() { wsSend({ type: 'visibility', visible: document.visibilityState === 'visible' }); }
 document.addEventListener('visibilitychange', () => { sendVisibility(); if (document.visibilityState === 'visible') { markRead(); updateBadge(); } });
@@ -1057,6 +1060,11 @@ function onWs(d) {
       if (inCurrent(kind, id)) { const m = S.msgs.find(x => x.id === d.message_id); if (m) { m.reactions = d.reactions; renderMsgs(true); } }
       break;
     }
+    case 'nur_update':
+      if (S.nur) S.nur.balance = d.balance; else loadNur();
+      if (d.tx && d.tx.kind === 'grant') toast('✦ Davra sizga ' + d.tx.amount + ' Nur sovg‘a qildi', 4200);
+      if (typeof onNurUpdate === 'function') onNurUpdate();
+      break;
     case 'profile_update': onProfileUpdate(d.user); break;
     case 'presence': {
       for (const c of S.chats) if (c.peer.id === d.user_id) { c.peer.online = d.online; c.peer.last_seen = d.last_seen; }
@@ -1200,6 +1208,7 @@ function wireUi() {
     const items = [{ icon: 'ℹ️', label: S.cur.kind === 'room' ? 'Ma‘lumot' : 'Profil', run: () => $('chatIdentity').click() },
       { icon: isMuted(key) ? '🔔' : '🔕', label: isMuted(key) ? 'Ovozni yoqish' : 'Ovozsiz qilish', run: () => toggleMute(key) }];
     if (d.pinned) items.push({ icon: '📌', label: 'Qadalgan xabarga o‘tish', run: () => jumpTo(d.pinned.id) });
+    if (S.cur.kind === 'direct' && d.status === 'accepted') items.push({ icon: '✦', label: 'Nur yuborish', run: () => openSendNur(d) });
     if (S.cur.kind === 'direct') items.push('-', { icon: '⛔', label: 'Bloklash', danger: true, run: () => blockPeer(d) });
     showPopup(items, r.right - 220, r.bottom + 6);
   };

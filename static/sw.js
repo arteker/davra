@@ -1,5 +1,5 @@
 // Davra service worker: tarmoq birinchi, oflayn bo'lsa keshdan; push bildirishnomalar.
-const CACHE = 'davra-v10';
+const CACHE = 'davra-v11';
 const SHELL = ['/', '/app.css', '/app.js', '/panels.js', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {

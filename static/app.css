@@ -417,3 +417,14 @@ button.lrow:hover,label.lrow:hover{background:var(--hover)}
 .room-member.clickable{cursor:pointer}.room-member.clickable:hover{background:var(--hover)}
 .room-member{align-items:center}
 .member-tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+/* ---- Nur (hamyon) */
+.nur-hero{display:flex;flex-direction:column;align-items:center;gap:2px;padding:26px 18px 14px;text-align:center;background:linear-gradient(160deg,var(--accent-soft),transparent)}
+.nur-star{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;font-size:30px;color:#fff;background:linear-gradient(135deg,#ffb347,#ff7a45);box-shadow:0 8px 24px rgba(255,122,69,.35)}
+.nur-balance{font-size:38px;font-weight:800;margin-top:8px;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.nur-claim{display:flex;flex-direction:column;gap:10px;text-align:center}
+.nur-claim .muted{margin-top:0}
+.nur-tx .li{font-size:20px}
+.nur-amt{font-weight:700;font-size:14.5px;flex:none;font-variant-numeric:tabular-nums}
+.nur-amt.plus{color:var(--ok)}.nur-amt.minus{color:var(--danger)}
+.nur-send .form-stack{gap:10px}
+.nur-chips{display:flex;gap:8px;flex-wrap:wrap}

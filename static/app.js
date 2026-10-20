@@ -322,8 +322,8 @@ async function loadAll() {
 
 // ---------------------------------------------------------------- WebSocket
 let pingTimer = null, retry = 0;
-function connectWS() {}
-  if (!S.token) return;
+function connectWS() {
+  if (!S.token) return; // <--- 326-qator shu atrofda bo'lishi kerak
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   const ws = new WebSocket(`${proto}://${location.host}/ws?token=${encodeURIComponent(S.token)}`);
   S.ws = ws;
@@ -338,10 +338,11 @@ function connectWS() {}
     S.wsOk = false; clearInterval(pingTimer);
     if (ev.code === 4401) return doLogout(true);
     $('conn').textContent = 'ulanmoqda…';
-    
-    // Vercel uzib qo'ysa, darhol qayta ulanish (kechikishni oldini olish uchun)
-    setTimeout(() => { if (S.token) connectWS(); }, 50); 
+    retry++;
+    // Vercel uzib qo'ysa, darhol qayta ulanish
+    setTimeout(() => { if (S.token) connectWS(); }, 50);
   };
+}
 function wsSend(obj) { if (S.ws && S.ws.readyState === 1) { S.ws.send(JSON.stringify(obj)); return true; } return false; }
 function sendVisibility() { wsSend({ type: 'visibility', visible: document.visibilityState === 'visible' }); }
 document.addEventListener('visibilitychange', () => { sendVisibility(); if (document.visibilityState === 'visible') { markRead(); updateBadge(); } });

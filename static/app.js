@@ -164,36 +164,31 @@ function avatarEl(entity, size) {
     ? S.nur.balance 
     : (entity.nur_balance || 0);
 
-  // Darajani aniqlash (Owner har doim eng yuqori darajada)
   let tierClass = '';
   if (isOwner) {
-    tierClass = 'tier-owner';
+    tierClass = 'tier-owner'; // Loyiha egasi uchun maxsus sinf
   } else if (isPrem) {
     if (nurBal >= 5000) tierClass = 'tier-3';
     else if (nurBal >= 3000) tierClass = 'tier-2';
     else tierClass = 'tier-1';
   }
 
-  // Asosiy 3D O‘rovchi Konteyner
   const wrap = h('div', { 
     class: `avatar-3d-wrap ${tierClass}`, 
     style: size ? `width:${size}px;height:${size}px;` : '' 
   });
 
   if (tierClass) {
-    // Porlash (Glow) va 3D Halqalar
     wrap.append(h('div', { class: 'avatar-glow-bg' }));
     wrap.append(h('div', { class: 'avatar-ring ring-1' }));
     wrap.append(h('div', { class: 'avatar-ring ring-2' }));
 
-    // Kosmik Zarrachalar
     const particleCount = isOwner ? 4 : (tierClass === 'tier-3' ? 4 : 2);
     for (let i = 1; i <= particleCount; i++) {
       wrap.append(h('div', { class: `avatar-particle p-${i}` }));
     }
   }
 
-  // Yadro (Avatar Core) — Surat yoki Harf
   const fontSize = size ? Math.max(12, Math.round(size * 0.38)) : 18;
   const el = h('div', { 
     class: 'avatar-core', 

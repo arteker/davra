@@ -925,3 +925,79 @@ button.lrow:hover,label.lrow:hover{background:var(--hover)}
   0% { transform: translateY(0) scale(1) rotate(-5deg); }
   100% { transform: translateY(-6px) scale(1.15) rotate(5deg); }
 }
+/* ==========================================================================
+   Davra — OWNER (Loyiha Egasi) Afsonaviy 3D Avatar & Toj
+   ========================================================================== */
+
+/* Owner konteyneri va Toj o'rni */
+.avatar-3d-wrap.tier-owner {
+  position: relative;
+  overflow: visible !important; /* Toj va porlash kesilib ketmasligi uchun */
+}
+
+/* Owner Toji (👑) — Avatar tepasida muallaq turadi */
+.avatar-3d-wrap.tier-owner::before {
+  content: '👑';
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 35;
+  font-size: 20px;
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.95));
+  animation: crownFloat 2.5s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+/* Owner Yadro Yuzasi (Qizil-Oltin Plazma) */
+.tier-owner .avatar-core {
+  border: 2.5px solid #ff3366 !important;
+  box-shadow: 0 0 25px rgba(255, 51, 102, 0.85), 
+              0 0 12px rgba(255, 215, 0, 0.8), 
+              inset 0 0 15px rgba(255, 255, 255, 0.5) !important;
+  animation: floatOwner3D 4s ease-in-out infinite !important;
+}
+
+/* Plazmali Orqa Fon Porlashi (Portlash effekti) */
+.tier-owner .avatar-glow-bg {
+  position: absolute; 
+  inset: -14px; 
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 51, 102, 0.65) 0%, rgba(255, 215, 0, 0.35) 50%, transparent 75%);
+  z-index: 1; 
+  animation: pulseOwnerBg 1.8s ease-in-out infinite alternate;
+}
+
+/* Aylanuvchi Portal Halqasi 1 (Oltin) */
+.tier-owner .avatar-ring.ring-1 {
+  position: absolute; border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: #FFD700; 
+  border-bottom-color: #ff3366;
+  inset: -7px; z-index: 2; 
+  animation: spinRing 2.5s linear infinite;
+}
+
+/* Aylanuvchi Portal Halqasi 2 (Alovli Qizil) */
+.tier-owner .avatar-ring.ring-2 {
+  position: absolute; border-radius: 50%;
+  border: 1.5px dashed #ff0844;
+  inset: -12px; z-index: 2; 
+  animation: spinRing 4s linear infinite reverse;
+}
+
+/* ANIMATSIYALAR */
+@keyframes crownFloat {
+  0% { transform: translateX(-50%) translateY(0) scale(1) rotate(-4deg); }
+  100% { transform: translateX(-50%) translateY(-5px) scale(1.15) rotate(4deg); }
+}
+
+@keyframes floatOwner3D {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-3px) scale(1.03); }
+}
+
+@keyframes pulseOwnerBg {
+  0% { transform: scale(0.88); opacity: 0.5; }
+  100% { transform: scale(1.18); opacity: 0.95; }
+}

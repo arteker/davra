@@ -448,3 +448,36 @@ button.lrow:hover,label.lrow:hover{background:var(--hover)}
   0%, 100% { filter: drop-shadow(0 1px 3px rgba(169,120,255,.4)); }
   50% { filter: drop-shadow(0 1px 8px rgba(169,120,255,.9)); }
 }
+/* ---- Gifts (Sovg'alar) ---- */
+.gift-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 12px; padding: 16px; }
+.gift-card {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  background: var(--panel2); border: 1px solid var(--line2); border-radius: 16px;
+  padding: 12px 8px; cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative; overflow: hidden;
+}
+.gift-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2), 0 0 15px var(--accent-soft);
+}
+.gift-icon-wrap { width: 60px; height: 60px; position: relative; display: flex; align-items: center; justify-content: center; }
+.gift-svg { width: 100%; height: 100%; animation: floatGift 3s ease-in-out infinite; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+@keyframes floatGift {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+  50% { transform: translateY(-8px) rotate(3deg) scale(1.05); }
+}
+.gift-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.gift-price { font-size: 12px; color: var(--accent); font-weight: 700; background: var(--accent-soft); padding: 2px 8px; border-radius: 10px; }
+
+/* Profildagi sovg'alar */
+.profile-gifts { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 18px; justify-content: center; }
+.mini-gift { width: 44px; height: 44px; animation: floatGift 4s ease-in-out infinite alternate; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); }
+
+/* Sovg'a kelganda (Toast animatsiyasi) */
+@keyframes popIn {
+  0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+  70% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+.gift-toast-icon { width: 40px; height: 40px; animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }

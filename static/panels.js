@@ -5,6 +5,68 @@
    app.js dan keyin yuklanadi (umumiy yordamchilar o'sha yerda).
    ========================================================================== */
 
+// ---------------------------------------------------------------- 3D SVG GIFTS
+const GIFT_SVGS = {
+  rose: `<svg class="gift-svg" viewBox="0 0 100 100"><defs><linearGradient id="roseGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff4b4b"/><stop offset="100%" stop-color="#b80000"/></linearGradient></defs><path d="M50 20 C30 20 20 40 30 60 C40 80 60 80 70 60 C80 40 70 20 50 20 Z" fill="url(#roseGrad)"/><path d="M50 30 C40 30 35 40 40 50 C45 60 55 60 60 50 C65 40 60 30 50 30 Z" fill="#ff7b7b" opacity="0.6"/><path d="M50 60 Q60 80 70 95 Q50 85 50 60 Z" fill="#2d8a39"/></svg>`,
+  star: `<svg class="gift-svg" viewBox="0 0 100 100"><defs><linearGradient id="starGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffe600"/><stop offset="100%" stop-color="#ff9900"/></linearGradient></defs><polygon points="50,10 61,40 95,40 68,60 78,90 50,70 22,90 32,60 5,40 39,40" fill="url(#starGrad)" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>`,
+  bear: `<svg class="gift-svg" viewBox="0 0 100 100"><defs><linearGradient id="bearGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#d4a373"/><stop offset="100%" stop-color="#8b5a2b"/></linearGradient></defs><circle cx="30" cy="30" r="15" fill="url(#bearGrad)"/><circle cx="70" cy="30" r="15" fill="url(#bearGrad)"/><circle cx="50" cy="55" r="30" fill="url(#bearGrad)"/><circle cx="40" cy="50" r="5" fill="#333"/><circle cx="60" cy="50" r="5" fill="#333"/><ellipse cx="50" cy="65" rx="10" ry="7" fill="#f4e4d4"/><circle cx="50" cy="62" r="3" fill="#333"/></svg>`,
+  crown: `<svg class="gift-svg" viewBox="0 0 100 100"><defs><linearGradient id="crownGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f9d423"/><stop offset="100%" stop-color="#ff4e50"/></linearGradient></defs><path d="M15 75 L25 30 L50 50 L75 30 L85 75 Z" fill="url(#crownGrad)" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><circle cx="25" cy="25" r="6" fill="#ffeb3b"/><circle cx="50" cy="45" r="6" fill="#ffeb3b"/><circle cx="75" cy="25" r="6" fill="#ffeb3b"/><rect x="15" y="75" width="70" height="10" rx="3" fill="#ffeb3b"/></svg>`,
+  rocket: `<svg class="gift-svg" viewBox="0 0 100 100"><defs><linearGradient id="rocketGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#00d2ff"/><stop offset="100%" stop-color="#3a7bd5"/></linearGradient></defs><path d="M50 10 C50 10 30 40 30 70 L50 85 L70 70 C70 40 50 10 50 10 Z" fill="url(#rocketGrad)"/><circle cx="50" cy="45" r="8" fill="#fff"/><path d="M40 70 L30 90 L50 85 Z" fill="#ff4b4b"/><path d="M60 70 L70 90 L50 85 Z" fill="#ff4b4b"/></svg>`
+};
+
+function showGiftToast(g) {
+  const toastEl = $('toast');
+  toastEl.innerHTML = `<div style="display:flex; align-items:center; gap:12px;"><div class="gift-toast-icon">${GIFT_SVGS[g.gift_type] || '🎁'}</div> <div style="font-size:13px;"><b>${g.sender_name}</b> sizga <br><b style="color:var(--accent)">${g.gift_name}</b> sovg'a qildi!</div></div>`;
+  toastEl.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { toastEl.hidden = true; }, 5000);
+}
+
+async function openGiftStore(chat) {
+  const peer = chat.peer;
+  // XATO SHU QATORDAGI QO'SHTIRNOQLARDA EDI (text: `Sovg'a yuborish')
+  const dlg = h('dialog', { class: 'sheet narrow' }, h('div', { class: 'sheet-head' }, h('h2', { text: "Sovg'a yuborish" })), 
+    h('p', { class: 'muted', style: 'text-align:center; padding: 0 16px;' }, `${peer.display_name} ga sovg'a tanlang`));
+  
+  const body = h('div', { class: 'sheet-body' });
+  const grid = h('div', { class: 'gift-grid' });
+  body.append(grid); dlg.append(body);
+  document.body.append(dlg); dlg.showModal();
+
+  try {
+    const catalog = await api('/gifts/catalog');
+    for (const [key, info] of Object.entries(catalog)) {
+      const card = h('div', { class: 'gift-card' });
+      card.innerHTML = `<div class="gift-icon-wrap">${GIFT_SVGS[key]}</div><div class="gift-name">${info.name}</div><div class="gift-price">${info.price} ✦</div>`;
+      
+      card.onclick = async () => {
+        if (!await confirmBox({ title: "Sovg'a yuborish", text: `${peer.display_name} ga ${info.name} sovg'a qilish uchun ${info.price} Nur yechiladi.`, ok: 'Yuborish' })) return;
+        card.style.opacity = '0.5';
+        try {
+          const r = await api('/gifts/send', { method: 'POST', body: { receiver_id: peer.id, gift_type: key } });
+          if (S.nur) S.nur.balance = r.new_balance;
+          toast('🎁 Sovg\'a muvaffaqiyatli yuborildi!');
+          dlg.close();
+        } catch (e) { toast(e.message); card.style.opacity = '1'; }
+      };
+      grid.append(card);
+    }
+  } catch (e) { toast('Do\'konni yuklab bo\'lmadi'); }
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+}
+
+async function loadProfileGifts(username, container) {
+  try {
+    const gifts = await api('/gifts/received/' + username);
+    container.replaceChildren();
+    if (!gifts.length) { container.append(h('div', { class: 'muted', style:'text-align:center; width:100%; font-size:12px;' }, 'Hali sovg\'alar yo\'q')); return; }
+    gifts.slice(0, 10).forEach(g => {
+      const el = h('div', { class: 'mini-gift', title: `${g.sender_name} dan` });
+      el.innerHTML = GIFT_SVGS[g.gift_type] || '';
+      container.append(el);
+    });
+  } catch { /* ignore */ }
+}
+
 // ---------------------------------------------------------------- dialog yordamchilari
 function openDlg(id) { const d = $(id); if (!d.open) d.showModal(); return d; }
 function closeDlg(id) { const d = $(id); if (d.open) d.close(); }
@@ -63,6 +125,10 @@ function fillProfile() {
   $('profileViewBio').textContent = me.bio || 'Bio qo‘shilmagan';
   $('ownerVerified').hidden = !me.is_owner;
   $('profileName').value = me.display_name; $('profileUsername').value = '@' + me.username; $('profileBio').value = me.bio || '';
+  
+  let giftBox = $('myProfileGifts');
+  if (!giftBox) { giftBox = h('div', { id: 'myProfileGifts', class: 'profile-gifts' }); $('profileViewBio').after(giftBox); }
+  loadProfileGifts(me.username, giftBox);
 }
 function setProfileEdit(on) {
   profileEdit = on; $('profileForm').hidden = !on; $('profileViewCards').hidden = on;
@@ -107,6 +173,11 @@ function openContact(chat) {
   $('contactTitle').replaceChildren(p.display_name, p.is_owner ? verifiedBadge() : '', p.is_premium ? premiumBadge() : '');
   $('contactStatus').textContent = lastSeenText(p); $('contactUsername').textContent = '@' + p.username;
   $('contactVerification').hidden = !p.is_owner; $('contactBio').textContent = p.bio || ''; $('contactBio').hidden = !p.bio;
+  
+  let giftBox = $('contactGifts');
+  if (!giftBox) { giftBox = h('div', { id: 'contactGifts', class: 'profile-gifts' }); $('contactBio').after(giftBox); }
+  loadProfileGifts(p.username, giftBox);
+  
   $('contactStart').textContent = 'Xabar yozish'; $('contactStart').onclick = () => { closeDlg('contactDialog'); openChat('direct', chat.id); };
   const mute = $('contactMute'); mute.textContent = isMuted(key) ? '🔔 Ovozni yoqish' : '🔕 Ovozsiz qilish';
   mute.onclick = () => { toggleMute(key); closeDlg('contactDialog'); };
@@ -737,7 +808,7 @@ async function nurClaim(btn) {
 }
 function nurTitle(tx) {
   const who = tx.peer ? tx.peer.display_name : 'Foydalanuvchi';
-  return { bonus: 'Kunlik bonus', grant: 'Davra sovg‘asi', sent: 'Yuborildi: ' + who, received: 'Olindi: ' + who }[tx.kind] || 'Amal';
+  return { bonus: 'Kunlik bonus', grant: 'Davra sovg‘asi', sent: 'Yuborildi: ' + who, received: 'Olindi: ' + who, premium: 'Premium obuna', gift: 'Sovg\'a xaridi' }[tx.kind] || 'Amal';
 }
 function nurWait(ts) {
   const s = Math.max(0, Math.ceil(ts - Date.now() / 1000)), hh = Math.floor(s / 3600), mm = Math.floor((s % 3600) / 60);
@@ -759,7 +830,7 @@ function pageNur(body) {
   if (!NURP.items.length) body.append(h('div', { class: 'pad muted', text: NURP.loaded ? 'Hali amallar yo‘q. Birinchi kunlik bonusni oling!' : 'Yuklanmoqda…' }));
   for (const tx of NURP.items) {
     body.append(h('div', { class: 'lrow static nur-tx' },
-      h('span', { class: 'li', text: { bonus: '🎁', grant: '🎉', sent: '📤', received: '📥', premium: '💎' }[tx.kind] || '✦' }),
+      h('span', { class: 'li', text: { bonus: '🎁', grant: '🎉', sent: '📤', received: '📥', premium: '💎', gift: '🛍️' }[tx.kind] || '✦' }),
       h('span', { class: 'lt' }, h('b', { text: nurTitle(tx) }), h('small', { text: dayLabel(tx.created_at) + ', ' + fmtTime(tx.created_at) + (tx.note ? ' · ' + tx.note : '') })),
       h('span', { class: 'nur-amt ' + (tx.amount > 0 ? 'plus' : 'minus'), text: (tx.amount > 0 ? '+' : '−') + fmtNur(Math.abs(tx.amount)) + ' ✦' })));
   }

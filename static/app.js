@@ -168,14 +168,12 @@ function avatarEl(entity, size) {
   return el;
 }
 
-// Tasdiqlangan (Owner) belgisi
 const verifiedBadge = () => {
   const s = h('span', { class: 'verified-badge', title: 'Davra tomonidan tasdiqlangan', role: 'img', 'aria-label': 'Davra tomonidan tasdiqlangan' });
   s.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="url(#vbGrad)" stroke="url(#vbGrad)" stroke-width="1.2" stroke-linejoin="round"><rect x="4.6" y="4.6" width="14.8" height="14.8" rx="2.6"/><rect x="4.6" y="4.6" width="14.8" height="14.8" rx="2.6" transform="rotate(30 12 12)"/><rect x="4.6" y="4.6" width="14.8" height="14.8" rx="2.6" transform="rotate(60 12 12)"/></g><path d="M7.9 12.5l2.9 2.8 5.4-6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   return s;
 };
 
-// Premium belgisi (Qirrali Olmos SVG)
 const premiumBadge = () => {
   const s = h('span', { class: 'premium-badge', title: 'Davra Premium', role: 'img', 'aria-label': 'Davra Premium' });
   s.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">
@@ -323,7 +321,7 @@ async function loadAll() {
 // ---------------------------------------------------------------- WebSocket
 let pingTimer = null, retry = 0;
 function connectWS() {
-  if (!S.token) return; // <--- 326-qator shu atrofda bo'lishi kerak
+  if (!S.token) return;
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   const ws = new WebSocket(`${proto}://${location.host}/ws?token=${encodeURIComponent(S.token)}`);
   S.ws = ws;
@@ -338,9 +336,7 @@ function connectWS() {
     S.wsOk = false; clearInterval(pingTimer);
     if (ev.code === 4401) return doLogout(true);
     $('conn').textContent = 'ulanmoqda…';
-    retry++;
-    // Vercel uzib qo'ysa, darhol qayta ulanish
-    setTimeout(() => { if (S.token) connectWS(); }, 50);
+    retry++; setTimeout(() => { if (S.token) connectWS(); }, 50);
   };
 }
 function wsSend(obj) { if (S.ws && S.ws.readyState === 1) { S.ws.send(JSON.stringify(obj)); return true; } return false; }
@@ -1015,9 +1011,6 @@ async function finishRecording() {
   } catch (e) { toast(e.message); }
 }
 
-
-// Brauzer yozgan webm/mp4 har qurilmada bir xil ijro bo'lmaydi (davomiylik yo'q, siljitib bo'lmaydi, iPhone'da ochilmaydi).
-// Shuning uchun ovoz 16 kHz mono WAV'ga aylantiriladi: hamma joyda ishlaydi, sifati nutq uchun yetarli.
 async function toWav(blob) {
   const AC = window.AudioContext || window.webkitAudioContext;
   const ctx = new AC();
@@ -1036,7 +1029,6 @@ async function toWav(blob) {
   return new Blob([out], { type: 'audio/wav' });
 }
 
-// ---------------------------------------------------------------- rasm ko'rish
 function openLightbox(src, name) {
   $('lightboxImg').src = src; const a = $('lightboxDownload'); a.href = src; a.download = name || 'rasm.jpg';
   $('lightbox').showModal();
@@ -1086,6 +1078,12 @@ function onWs(d) {
       if (d.tx && d.tx.kind === 'grant') toast('✦ Davra sizga ' + d.tx.amount + ' Nur sovg‘a qildi', 4200);
       if (typeof onNurUpdate === 'function') onNurUpdate();
       break;
+    case 'gift_received': {
+      const g = d.gift;
+      if (typeof showGiftToast === 'function') showGiftToast(g);
+      if (S.settings.notif.sound) beep();
+      break;
+    }
     case 'profile_update': onProfileUpdate(d.user); break;
     case 'presence': {
       for (const c of S.chats) if (c.peer.id === d.user_id) { c.peer.online = d.online; c.peer.last_seen = d.last_seen; }
@@ -1154,7 +1152,7 @@ function markRead() {
   d.unread = 0; renderList();
 }
 
-// ---------------------------------------------------------------- bildirishnoma (ilova ichida)
+// ---------------------------------------------------------------- bildirishnoma
 let audioCtx = null;
 function beep() {
   try {
@@ -1228,7 +1226,10 @@ function wireUi() {
     const items = [{ icon: 'ℹ️', label: S.cur.kind === 'room' ? 'Ma‘lumot' : 'Profil', run: () => $('chatIdentity').click() },
       { icon: isMuted(key) ? '🔔' : '🔕', label: isMuted(key) ? 'Ovozni yoqish' : 'Ovozsiz qilish', run: () => toggleMute(key) }];
     if (d.pinned) items.push({ icon: '📌', label: 'Qadalgan xabarga o‘tish', run: () => jumpTo(d.pinned.id) });
-    if (S.cur.kind === 'direct' && d.status === 'accepted') items.push({ icon: '✦', label: 'Nur yuborish', run: () => openSendNur(d) });
+    if (S.cur.kind === 'direct' && d.status === 'accepted') {
+      items.push({ icon: '✦', label: 'Nur yuborish', run: () => openSendNur(d) });
+      items.push({ icon: '🎁', label: 'Sovg\'a yuborish', run: () => openGiftStore(d) });
+    }
     if (S.cur.kind === 'direct') items.push('-', { icon: '⛔', label: 'Bloklash', danger: true, run: () => blockPeer(d) });
     showPopup(items, r.right - 220, r.bottom + 6);
   };

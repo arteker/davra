@@ -919,7 +919,8 @@ async def ws_endpoint(ws: WebSocket):
 import features
 import extras
 import nur
-import premium   # <--- BU QATOR BO'LISHI SHART!
+import premium
+import gifts  # <--- BU QATORNI QO'SHING
 
 # Frontend (PWA) fayllari — eng oxirida ulanadi
 app.mount("/", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static"), html=True), name="static")

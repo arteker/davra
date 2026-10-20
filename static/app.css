@@ -1040,3 +1040,67 @@ button.lrow:hover,label.lrow:hover{background:var(--hover)}
   color: var(--muted) !important;
   padding: 8px 0 !important;
 }
+/* ==========================================================================
+   Echimlar: Chat ro'yxatidagi qirqilishlar va Profil sovg'alari tuzatishi
+   ========================================================================== */
+
+/* Chat list va itemlarda halqalar kesilib ketmasligi uchun */
+.item, .lrow, .drawer-profile, .chead, .hero {
+  overflow: visible !important;
+}
+
+.item > div:first-child {
+  position: relative !important;
+  flex: none !important;
+  overflow: visible !important;
+}
+
+/* 3D o'rovchi konteynerga yetarlicha joy ajratish */
+.avatar-3d-wrap {
+  overflow: visible !important;
+  margin: 4px;
+}
+
+/* Profil ichidagi sovg'alar konteyneri (2-rasm uchun) */
+.profile-gifts {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  padding: 12px 18px !important;
+  justify-content: center !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  clear: both !important;
+}
+
+.profile-gifts .muted {
+  width: 100% !important;
+  text-align: center !important;
+  font-size: 13px !important;
+  color: var(--muted) !important;
+  display: block !important;
+  padding: 6px 0 !important;
+}
+/* ==========================================================================
+   Chat ro'yxatida avatar halqalari kesilmasligi uchun yakuniy tuzatish
+   ========================================================================== */
+
+/* Itemning o'zida ichki bo'shliq ajratamiz */
+#chatList .item {
+  overflow: visible !important;
+  padding-left: 18px !important; /* Halqalar chapga chiqib ketsa ham kesilmaydi */
+}
+
+/* Avatar joylashgan chap blok */
+#chatList .item > div:first-child {
+  position: relative !important;
+  flex: none !important;
+  overflow: visible !important;
+  margin-right: 6px !important;
+}
+
+/* 3D o'rovchi konteynerning o'zi */
+.avatar-3d-wrap {
+  overflow: visible !important;
+  position: relative !important;
+}

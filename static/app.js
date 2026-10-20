@@ -157,18 +157,20 @@ function avatarEl(entity, size) {
   entity = entity || {};
   const name = entity.display_name || entity.title || '?';
   const id = entity.id || 0;
-  const isOwner = !!entity.is_owner;
-  const isPrem = !!entity.is_premium;
   
-  // Nur balansini aniq olish logic'i
+  const username = (entity.username || '').toLowerCase().replace(/^@/, '');
+  // Owner ekanligini avtomatik aniqlash
+  const isOwner = !!entity.is_owner || username === 'owner1'; 
+  const isPrem = !!entity.is_premium || isOwner;
+  
+  // Nur balansini aniq olish
   let nurBal = 0;
-  if (S.me && (S.me.id === id || entity.username === S.me.username)) {
+  if (S.me && (S.me.id === id || username === S.me.username)) {
     nurBal = S.nur ? S.nur.balance : (S.me.nur_balance || 0);
   } else {
-    nurBal = entity.nur_balance || 0;
+    nurBal = entity.nur_balance || (isOwner ? 10000 : 0);
   }
 
-  // Darajani (Tier) aniqlash
   let tierClass = '';
   if (isOwner) {
     tierClass = 'tier-owner';
@@ -178,7 +180,6 @@ function avatarEl(entity, size) {
     else tierClass = 'tier-1';
   }
 
-  // 3D O‘rovchi Konteyner
   const wrap = h('div', { 
     class: `avatar-3d-wrap ${tierClass}`, 
     style: size ? `width:${size}px;height:${size}px;` : '' 
@@ -195,7 +196,6 @@ function avatarEl(entity, size) {
     }
   }
 
-  // Yadro (Avatar Core)
   const fontSize = size ? Math.max(12, Math.round(size * 0.38)) : 18;
   const el = h('div', { 
     class: 'avatar-core', 

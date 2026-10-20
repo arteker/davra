@@ -129,7 +129,7 @@ function fillProfile() {
 let giftBox = $('myProfileGifts');
 if (!giftBox) { 
   giftBox = h('div', { id: 'myProfileGifts', class: 'profile-gifts' }); 
-  $('profileViewCards').after(giftBox); // info-cards'dan keyin qo'shamiz
+  $('profileViewCards').after(giftBox); 
 }
 loadProfileGifts(me.username, giftBox);
 }

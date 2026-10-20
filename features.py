@@ -301,6 +301,7 @@ def _room_msg_base(message, sender, tag=""):
             "sender_name": sender.display_name if sender else "",
             "sender_username": sender.username if sender else "",
             "sender_is_owner": bool(sender and sender.is_owner),
+            "sender_is_premium": bool(sender and getattr(sender, 'is_premium', False)), # <--- YANGI QATOR
             "sender_tag": tag or "",
             "text": "Xabar o'chirildi" if deleted else message.text,
             "created_at": message.created_at, "edited": message.edited_at is not None,
@@ -308,7 +309,6 @@ def _room_msg_base(message, sender, tag=""):
             "attachment": None if deleted else core._j(message.attach),
             "fwd": None if deleted else message.fwd,
             "reply_to": message.reply_to_id, "reply": None}
-
 
 async def _tags_for(db, room_id, user_ids):
     user_ids = list(user_ids)

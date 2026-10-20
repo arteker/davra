@@ -374,11 +374,14 @@ function connectWS() {
     if (wasDown) resync();
   };
   ws.onmessage = e => { let d; try { d = JSON.parse(e.data); } catch { return; } try { onWs(d); } catch (err) { console.error(err); } };
-  ws.onclose = ev => {
+    ws.onclose = ev => {
     S.wsOk = false; clearInterval(pingTimer);
     if (ev.code === 4401) return doLogout(true);
     $('conn').textContent = 'ulanmoqda…';
-    retry++; setTimeout(() => { if (S.token) connectWS(); }, Math.min(2000, 300 * retry));
+    
+    // Vercel/Render uzib qo'ysa, darhol qayta ulanish
+    retry++; 
+    setTimeout(() => { if (S.token) connectWS(); }, 100); // 100 millisekund
   };
 }
 function wsSend(obj) { if (S.ws && S.ws.readyState === 1) { S.ws.send(JSON.stringify(obj)); return true; } return false; }

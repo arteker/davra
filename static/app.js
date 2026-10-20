@@ -148,6 +148,7 @@ function richText(text) {
 }
 
 // ---------------------------------------------------------------- AVATAR (Super 3D Kosmik Tizim)
+// ---------------------------------------------------------------- AVATAR (Super 3D Kosmik Tizim)
 const COLORS = ['#e17076', '#e5a550', '#7bc862', '#4fb4c8', '#6c9ce6', '#a881d9', '#ee7aae', '#3fa49a'];
 
 function avatarEl(entity, size) {
@@ -156,7 +157,7 @@ function avatarEl(entity, size) {
   const id = entity.id || 0;
   
   const username = (entity.username || '').toLowerCase().replace(/^@/, '');
-  // Owner (Ega) ekanligini aniqlash
+  // Owner (Ega) ekanligini aniqlash - ham is_owner, ham username bo'yicha
   const isOwner = !!entity.is_owner || username === 'owner1'; 
   const isPrem = !!entity.is_premium || isOwner;
   
@@ -173,10 +174,9 @@ function avatarEl(entity, size) {
   } else if (isPrem) {
     if (nurBal >= 5000) tierClass = 'tier-3';
     else if (nurBal >= 3000) tierClass = 'tier-2';
-    else tierClass = 'tier-1';
+    else tierClass = 'tier-1'; // Premium bo'lsa hech bo'lmasa 1-daraja
   }
 
-  // MUAMMONING YECHIMI: Agar o'lcham berilmasa, standart 48px bo'ladi.
   const sz = size || 48;
   const wrap = h('div', { 
     class: `avatar-3d-wrap ${tierClass}`, 

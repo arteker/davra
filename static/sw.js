@@ -1,5 +1,6 @@
 // Davra service worker: tarmoq birinchi, oflayn bo'lsa keshdan; push bildirishnomalar.
-const CACHE = 'davra-v11';
+// sw.js dagi eng birinchi qatorni mana bunga almashtiring:
+const CACHE = 'davra-v12'; 
 const SHELL = ['/', '/app.css', '/app.js', '/panels.js', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {

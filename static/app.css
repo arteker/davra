@@ -670,3 +670,185 @@ button.lrow:hover,label.lrow:hover{background:var(--hover)}
   0% { transform: rotate(90deg) translateX(30px) rotate(-90deg); }
   100% { transform: rotate(450deg) translateX(30px) rotate(-450deg); }
 }
+/* ==========================================================================
+   Davra — Mukammallashtirilgan 3D Avatar & Futurist Tier Tizimi
+   ========================================================================== */
+
+/* Asosiy avatar konteyneri va 3D perspektiva */
+.avatar-3d-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1200px;
+  flex: none;
+  user-select: none;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.avatar-3d-wrap:hover {
+  transform: scale(1.08) rotateY(6deg) rotateX(-4deg);
+}
+
+/* Yadro (Core) / Surat yoki Harf joylashadigan qatlam */
+.avatar-core {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  z-index: 10;
+  background-image: linear-gradient(135deg, rgba(255,255,255,0.28), rgba(0,0,0,0.25));
+  box-shadow: inset 0 2px 6px rgba(255,255,255,0.3), inset 0 -3px 8px rgba(0,0,0,0.4);
+  transform-style: preserve-3d;
+  overflow: hidden;
+}
+
+.avatar-core .av-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  z-index: 11;
+  transition: opacity 0.3s ease;
+}
+
+/* Onlayn indikatori (Status Dot) */
+.dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--ok);
+  border: 2.5px solid var(--panel);
+  z-index: 25;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* ==================== PREMIUM & NUR DARАJALARI (TIERS) ==================== */
+
+/* 🌌 1-Daraja (1000+ Nur / Basic Premium): Neonaviy Moviy Ummon */
+.tier-1 .avatar-core {
+  border: 2px solid #00d2ff;
+  box-shadow: 0 0 16px rgba(0, 210, 255, 0.65), inset 0 0 10px rgba(0, 210, 255, 0.5);
+  animation: floatAvatar 3.5s ease-in-out infinite;
+}
+.tier-1 .avatar-glow-bg {
+  position: absolute; inset: -8px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 210, 255, 0.45) 0%, transparent 70%);
+  z-index: 1; animation: pulseBg 2.5s ease-in-out infinite alternate;
+}
+.tier-1 .avatar-ring.ring-1 {
+  position: absolute; border-radius: 50%;
+  border: 2px dashed rgba(0, 210, 255, 0.7);
+  inset: -6px; z-index: 2; animation: spinRing 7s linear infinite;
+}
+
+/* 🔮 2-Daraja (3000+ Nur / Ultra Premium): Kosmik Binafsha Galaktika */
+.tier-2 .avatar-core {
+  border: 2.5px solid #c084fc;
+  box-shadow: 0 0 22px rgba(192, 132, 252, 0.8), inset 0 0 14px rgba(192, 132, 252, 0.6);
+  animation: floatAvatar 4s ease-in-out infinite;
+}
+.tier-2 .avatar-glow-bg {
+  position: absolute; inset: -12px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(192, 132, 252, 0.55) 0%, transparent 65%);
+  z-index: 1; animation: pulseBg 3s ease-in-out infinite alternate;
+}
+.tier-2 .avatar-ring.ring-1 {
+  position: absolute; border-radius: 50%;
+  border: 2px dotted rgba(192, 132, 252, 0.85);
+  inset: -7px; z-index: 2; animation: spinRing 9s linear infinite reverse;
+}
+.tier-2 .avatar-ring.ring-2 {
+  position: absolute; border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  inset: -12px; z-index: 2; animation: spinRing3D 5.5s ease-in-out infinite;
+}
+
+/* 👑 3-Daraja (5000+ Nur / Royal Premium): Oltin Qirollik Toji va Plazma */
+.tier-3 .avatar-core {
+  border: 3px solid #FFD700;
+  box-shadow: 0 0 32px rgba(255, 215, 0, 0.95), inset 0 0 18px rgba(255, 215, 0, 0.85);
+  animation: floatAvatar3D 4.5s ease-in-out infinite;
+}
+.tier-3 .avatar-glow-bg {
+  position: absolute; inset: -16px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.6) 0%, transparent 55%);
+  z-index: 1; animation: pulseBg 1.8s ease-in-out infinite alternate;
+}
+.tier-3 .avatar-ring.ring-1 {
+  position: absolute; border-radius: 50%;
+  border: 2.5px solid transparent;
+  border-top-color: #FFD700; border-bottom-color: #FF8C00;
+  inset: -8px; z-index: 2; animation: spinRing 3.5s linear infinite;
+}
+.tier-3 .avatar-ring.ring-2 {
+  position: absolute; border-radius: 50%;
+  border: 2px solid transparent;
+  border-left-color: #ffffff; border-right-color: #FFD700;
+  inset: -14px; z-index: 2; animation: spinRing 5s linear infinite reverse;
+}
+
+/* 🌟 Aylanuvchi Zarrachalar (Orbital Particles) */
+.avatar-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  z-index: 3;
+  pointer-events: none;
+}
+.tier-1 .avatar-particle { background: #00d2ff; box-shadow: 0 0 8px #00d2ff; }
+.tier-2 .avatar-particle { background: #c084fc; box-shadow: 0 0 9px #c084fc; }
+.tier-3 .avatar-particle { background: #FFD700; box-shadow: 0 0 12px #FFD700; width: 5px; height: 5px; }
+
+.p-1 { animation: orbit1 3s linear infinite; }
+.p-2 { animation: orbit2 4s linear infinite; }
+.p-3 { animation: orbit1 5s linear infinite reverse; }
+.p-4 { animation: orbit2 3.5s linear infinite reverse; }
+
+/* 🎬 ULTRA SILISHLI ANIMATSIYALAR */
+@keyframes floatAvatar {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-4px) scale(1.02); }
+}
+
+@keyframes floatAvatar3D {
+  0%, 100% { transform: translateZ(0) rotateX(0) rotateY(0); }
+  25% { transform: translateZ(12px) rotateX(6deg) rotateY(6deg); }
+  75% { transform: translateZ(12px) rotateX(-6deg) rotateY(-6deg); }
+}
+
+@keyframes pulseBg {
+  0% { transform: scale(0.88); opacity: 0.45; }
+  100% { transform: scale(1.15); opacity: 0.95; }
+}
+
+@keyframes spinRing {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes spinRing3D {
+  0%, 100% { transform: rotateX(65deg) rotateY(0deg) rotateZ(0deg); }
+  50% { transform: rotateX(65deg) rotateY(180deg) rotateZ(180deg); }
+}
+
+@keyframes orbit1 {
+  0% { transform: rotate(0deg) translateX(24px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(24px) rotate(-360deg); }
+}
+
+@keyframes orbit2 {
+  0% { transform: rotate(90deg) translateX(28px) rotate(-90deg); }
+  100% { transform: rotate(450deg) translateX(28px) rotate(-450deg); }
+}

@@ -150,47 +150,65 @@ function richText(text) {
 }
 
 // ---------------------------------------------------------------- AVATAR (3D Kosmik Effekt)
+// ---------------------------------------------------------------- AVATAR (Super 3D Kosmik Tizim)
 const COLORS = ['#e17076', '#e5a550', '#7bc862', '#4fb4c8', '#6c9ce6', '#a881d9', '#ee7aae', '#3fa49a'];
 
 function avatarEl(entity, size) {
+  entity = entity || {};
   const name = entity.display_name || entity.title || '?';
   const id = entity.id || 0;
-  const isPrem = entity.is_premium;
-  const nurBal = (S.me && S.me.id === id && S.nur) ? S.nur.balance : (entity.nur_balance || 0);
+  const isPrem = !!entity.is_premium;
   
+  // Balans va Premium darajasini aniqlash
+  const nurBal = (S.me && S.me.id === id && S.nur) 
+    ? S.nur.balance 
+    : (entity.nur_balance || 0);
+
   let tier = 0;
   if (isPrem) {
     if (nurBal >= 5000) tier = 3;
     else if (nurBal >= 3000) tier = 2;
-    else if (nurBal >= 1000) tier = 1;
+    else tier = 1; // Kamida 1000+ yoki Premium bo'lsa
   }
 
-  // Asosiy konteyner (3D ko'rinish beruvchi)
-  const wrap = h('div', { class: `avatar-3d-wrap tier-${tier}`, style: size ? `width:${size}px;height:${size}px;` : '' });
-  
+  // Asosiy 3D O‘rovchi Konteyner
+  const wrap = h('div', { 
+    class: `avatar-3d-wrap tier-${tier}`, 
+    style: size ? `width:${size}px;height:${size}px;` : '' 
+  });
+
+  // Agar Premium darajasi mavjud bo'lsa — Effektlarni joylaymiz
   if (tier > 0) {
-    // Orqa fondagi porlash
+    // Background Glow
     wrap.append(h('div', { class: 'avatar-glow-bg' }));
     
-    // Aylanuvchi 3D halqalar
+    // 3D Orbital Halqalar
     wrap.append(h('div', { class: 'avatar-ring ring-1' }));
-    wrap.append(h('div', { class: 'avatar-ring ring-2' }));
-    
-    // Suzuvchi zarrachalar
-    for(let i=1; i<=4; i++) wrap.append(h('div', { class: `avatar-particle p-${i}` }));
+    if (tier >= 2) wrap.append(h('div', { class: 'avatar-ring ring-2' }));
+
+    // Kosmik Zarrachalar
+    const particleCount = tier === 3 ? 4 : (tier === 2 ? 3 : 2);
+    for (let i = 1; i <= particleCount; i++) {
+      wrap.append(h('div', { class: `avatar-particle p-${i}` }));
+    }
   }
 
-  // Asosiy rasm (yoki harf)
-  const el = h('div', { class: 'avatar-core', style: `background-color:${COLORS[id % COLORS.length]}` + (size ? `;font-size:${Math.round(size * .38)}px` : '') });
-  el.append((Array.from(name.trim())[0] || '?').toUpperCase());
+  // Yadro (Avatar Core) — Surat yoki Harf
+  const fontSize = size ? Math.max(12, Math.round(size * 0.38)) : 18;
+  const el = h('div', { 
+    class: 'avatar-core', 
+    style: `background-color:${COLORS[Math.abs(id) % COLORS.length]}; font-size:${fontSize}px;` 
+  });
   
+  el.append((Array.from(name.trim())[0] || '?').toUpperCase());
+
   if (entity.avatar_url) {
-    const img = h('img', { class: 'av-img', src: entity.avatar_url, alt: '', loading: 'lazy' });
+    const img = h('img', { class: 'av-img', src: entity.avatar_url, alt: name, loading: 'lazy' });
     img.addEventListener('error', () => img.remove());
     el.append(img);
   }
-  wrap.append(el);
 
+  wrap.append(el);
   return wrap;
 }
 
